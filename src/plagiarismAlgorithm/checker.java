@@ -4,13 +4,35 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Scanner;
 import java.util.Set;
 import java.lang.Math;
+import org.apache.pdfbox.pdmodel.*;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.text.PDFTextStripper;
 
 public class Checker {
 
-    public HashMap<String, Integer> getFreqencyMap(File file)
+    public HashMap<String, Integer> getFreqencyMap(File file) throws IOException
+    {
+        HashMap<String, Integer> toReturn = new HashMap<String, Integer>();
+        
+        PDDocument document = Loader.loadPDF(file);
+        PDPageTree tree = document.getPages();
+        Iterator<PDPage> pages = tree.iterator();
+
+        /*
+        Set<String> words = toReturn.keySet();
+        for (String string : words) {
+            System.out.printf("%s : %d\n", string, toReturn.get(string));
+        }
+        */
+
+        return toReturn;
+    }
+
+    public HashMap<String, Integer> getFreqencyMapPDF(File file)
     {
         HashMap<String, Integer> toReturn = new HashMap<String, Integer>();
         Scanner scanner;
