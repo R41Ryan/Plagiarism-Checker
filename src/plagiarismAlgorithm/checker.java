@@ -14,13 +14,52 @@ import org.apache.pdfbox.text.PDFTextStripper;
 
 public class Checker {
 
-    public HashMap<String, Integer> getFreqencyMap(File file) throws IOException
+    public HashMap<String, Integer> getFreqencyMapPDF(File file)
     {
         HashMap<String, Integer> toReturn = new HashMap<String, Integer>();
-        
-        PDDocument document = Loader.loadPDF(file);
-        PDPageTree tree = document.getPages();
-        Iterator<PDPage> pages = tree.iterator();
+        PDDocument document = new PDDocument();
+        try {
+            document = Loader.loadPDF(file);
+        } catch (IOException e)
+        {
+            System.out.println("Unable to load pdf file!");
+            e.printStackTrace();
+            return null;
+        }
+
+        PDFTextStripper stripper = new PDFTextStripper();
+        String pageText;
+        try {
+            pageText = stripper.getText(document);
+        } catch (IOException e1) {
+            System.out.println("Unable to get text from pdf!");
+            e1.printStackTrace();
+            return null;
+        }
+
+        Scanner scanner = new Scanner(pageText);
+
+        while (scanner.hasNext())
+        {
+            String word = scanner.next();
+            if (toReturn.containsKey(word))
+            {
+                toReturn.put(word, toReturn.get(word) + 1);
+            }
+            else
+            {
+                toReturn.put(word, 1);
+            }
+        }
+
+        scanner.close();
+
+        try {
+            document.close();
+        } catch (IOException e) {
+            System.out.println("Could not close PDDocument object!");
+            e.printStackTrace();
+        }
 
         /*
         Set<String> words = toReturn.keySet();
@@ -32,14 +71,14 @@ public class Checker {
         return toReturn;
     }
 
-    public HashMap<String, Integer> getFreqencyMapPDF(File file)
+    public HashMap<String, Integer> getFreqencyMap(File file)
     {
         HashMap<String, Integer> toReturn = new HashMap<String, Integer>();
         Scanner scanner;
         try {
             scanner = new Scanner(file);
         } catch (FileNotFoundException e) {
-            System.out.println("Error occured while creating Scanner");
+            System.out.println("Could not find file");
             e.printStackTrace();
             return null;
         }
@@ -102,7 +141,14 @@ public class Checker {
         return 1f - Math.acos(numerator/denominator) / (3.1416f / 2f);
     }
 
-    public double getSimilarity(File file1, File file2)
+    public double getSimilarityPDF(File file1, File file2) throws IOException
+    {
+        HashMap<String, Integer> wordFrequencyMap1 = getFreqencyMapPDF(file1);
+        HashMap<String, Integer> wordFrequencyMap2 = getFreqencyMapPDF(file2);
+        return vectorAngle(wordFrequencyMap1, wordFrequencyMap2);
+    }
+
+    public double getSimilarity(File file1, File file2) throws IOException
     {
         HashMap<String, Integer> wordFrequencyMap1 = getFreqencyMap(file1);
         HashMap<String, Integer> wordFrequencyMap2 = getFreqencyMap(file2);
