@@ -22,6 +22,7 @@ public class UI implements ActionListener{
     private HashMap<String, JButton> buttons;
     private HashMap<String, JTextArea> textAreas;
     private JButton[] fileButtons;
+    private JLabel[] similarityLabels;
 
     private JFrame frame;
     
@@ -40,6 +41,7 @@ public class UI implements ActionListener{
         // Initialize JPanels *******************************************************************************
         panels.put("mainPage", new JPanel(new BorderLayout()));
         panels.put("fileSelection", new JPanel(new FlowLayout()));
+        panels.put("fileSimilarity", new JPanel(new FlowLayout()));
 
         // Initialize Buttons *******************************************************************************
 
@@ -50,6 +52,8 @@ public class UI implements ActionListener{
         buttons.get("checkPlagiarism").addActionListener(this);
         buttons.put("fileSelectionBack", new JButton("Back"));
         buttons.get("fileSelectionBack").addActionListener(this);
+        buttons.put("fileSimilarityBack", new JButton("Back"));
+        buttons.get("fileSimilarityBack").addActionListener(this);
 
         // Initialize textAreas *****************************************************************************
 
@@ -89,6 +93,20 @@ public class UI implements ActionListener{
         frame.setContentPane(panels.get("fileSelection"));
     }
 
+    // Load the file similarity page for a specific file as indicated by the index
+    void loadFileSimilarity(int i)
+    {
+        panels.get("fileSimilarity").removeAll();
+        similarityLabels = new JLabel[selectedFiles.length];
+        for (int j = 0; j < selectedFiles.length; j++)
+        {
+            similarityLabels[j] = new JLabel("Similarity with " + selectedFiles[j] + ": " + fileSimilarities[i][j]);
+            panels.get("fileSimilarity").add(similarityLabels[j]);
+        }
+        panels.get("fileSimilarity").add(buttons.get("fileSimilarityBack"));
+        frame.setContentPane(panels.get("fileSimilarity"));
+    }
+
     // Calculate the similarities for all files
     void calculateSimilarities()
     {
@@ -122,6 +140,16 @@ public class UI implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        int fileButtonSelected = -1;
+        for (int i = 0; i < selectedFiles.length; i++)
+        {
+            if (e.getSource() == fileButtons[i])
+            {
+                fileButtonSelected = i;
+                break;
+            }
+        }
+
         if (e.getSource() == buttons.get("openFile")) // User pressed "Open File(s) button on main page"
         {
             JFileChooser fileChooser = new JFileChooser(FileSystemView.getFileSystemView());
@@ -149,7 +177,7 @@ public class UI implements ActionListener{
                 }
             }
         }
-        else if (e.getSource() == buttons.get("checkPlagiarism"))
+        else if (e.getSource() == buttons.get("checkPlagiarism")) // User pressed check plagiarism button
         {
             calculateSimilarities();
             for (int i = 0; i < selectedFiles.length; i++)
@@ -166,10 +194,14 @@ public class UI implements ActionListener{
                 loadFileSelectionPage();
             }
         }
-        else if (e.getSource() == buttons.get("fileSelectionBack"))
+        else if (e.getSource() == buttons.get("fileSelectionBack")) // user clicked back button on file selection screen
         {
             panels.get("fileSelection").removeAll();
             loadMainPage();
+        }
+        else if (fileButtonSelected >= 0)
+        {
+
         }
         
         frame.validate();
