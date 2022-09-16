@@ -15,11 +15,13 @@ public class UI implements ActionListener{
 
     // Data members used to return information
     private File[] selectedFiles;
+    private double[][] fileSimilarities;
 
     // Components that are graphically displayed
     private HashMap<String, JPanel> panels;
     private HashMap<String, JButton> buttons;
     private HashMap<String, JTextArea> textAreas;
+    private JButton[] fileButtons;
 
     private JFrame frame;
     
@@ -37,6 +39,7 @@ public class UI implements ActionListener{
 
         // Initialize JPanels *******************************************************************************
         panels.put("mainPage", new JPanel(new BorderLayout()));
+        panels.put("fileSelection", new JPanel(new FlowLayout()));
 
         // Initialize Buttons *******************************************************************************
 
@@ -45,6 +48,8 @@ public class UI implements ActionListener{
         buttons.get("openFile").addActionListener(this);
         buttons.put("checkPlagiarism", new JButton("Check Plagiarism"));
         buttons.get("checkPlagiarism").addActionListener(this);
+        buttons.put("fileSelectionBack", new JButton("Back"));
+        buttons.get("fileSelectionBack").addActionListener(this);
 
         // Initialize textAreas *****************************************************************************
 
@@ -58,7 +63,7 @@ public class UI implements ActionListener{
         frame.validate();
     }
 
-    // Functions
+    // Functions ********************************************************************************************************************
 
     // Load main page
     void loadMainPage()
@@ -71,7 +76,48 @@ public class UI implements ActionListener{
         panels.get("mainPage").add(textAreas.get("selectedFiles"), BorderLayout.CENTER);
         panels.get("mainPage").add(buttons.get("checkPlagiarism"), BorderLayout.SOUTH);
         frame.setContentPane(panels.get("mainPage"));
-        frame.validate();
+    }
+
+    // Load the file selection page
+    void loadFileSelectionPage()
+    {
+        for (int i = 0; i < fileButtons.length; i++)
+        {
+            panels.get("fileSelection").add(fileButtons[i]);
+        }
+        panels.get("fileSelection").add(buttons.get("fileSelectionBack"));
+        frame.setContentPane(panels.get("fileSelection"));
+    }
+
+    // Calculate the similarities for all files
+    void calculateSimilarities()
+    {
+        fileSimilarities = new double[selectedFiles.length][selectedFiles.length];
+        Checker checker = new Checker();
+        for (int i = 0; i < selectedFiles.length; i++)
+        {
+            for (int j = 0; j < selectedFiles.length; j++)
+            {
+                try {
+                    fileSimilarities[i][j] = checker.getSimilarityPDF(selectedFiles[i], selectedFiles[j]);
+                } catch (IOException e) {
+                    System.out.println("Error while calculating similarity\n");
+                    e.printStackTrace();
+                    return;
+                } 
+            }
+        }
+    }
+
+    // Create the buttons for the selected files
+    void createFileButtons()
+    {
+        fileButtons = new JButton[selectedFiles.length];
+        for (int i = 0; i < selectedFiles.length; i++)
+        {
+            fileButtons[i] = new JButton(selectedFiles[i].getName());
+            fileButtons[i].addActionListener(this);
+        }
     }
 
     @Override
@@ -102,6 +148,28 @@ public class UI implements ActionListener{
                     i++;
                 }
             }
+        }
+        else if (e.getSource() == buttons.get("checkPlagiarism"))
+        {
+            calculateSimilarities();
+            for (int i = 0; i < selectedFiles.length; i++)
+            {
+                for (int j = 0; j < selectedFiles.length; j++)
+                {
+                    System.out.print(fileSimilarities[i][j] + " ");
+                }
+                System.out.println();
+            }
+            if (selectedFiles.length > 1)
+            {
+                createFileButtons();
+                loadFileSelectionPage();
+            }
+        }
+        else if (e.getSource() == buttons.get("fileSelectionBack"))
+        {
+            panels.get("fileSelection").removeAll();
+            loadMainPage();
         }
         
         frame.validate();
