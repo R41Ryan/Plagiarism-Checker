@@ -17,6 +17,9 @@ public class UI implements ActionListener{
     private File[] selectedFiles;
     private double[][] fileSimilarities;
 
+    // Flags for various purposes
+    boolean isInFileSelection;
+
     // Components that are graphically displayed
     private HashMap<String, JPanel> panels;
     private HashMap<String, JButton> buttons;
@@ -63,6 +66,7 @@ public class UI implements ActionListener{
 
 
         loadMainPage();
+        isInFileSelection = false;
         frame.pack();
         frame.validate();
     }
@@ -85,6 +89,7 @@ public class UI implements ActionListener{
     // Load the file selection page
     void loadFileSelectionPage()
     {
+        panels.get("fileSelection").removeAll();
         for (int i = 0; i < fileButtons.length; i++)
         {
             panels.get("fileSelection").add(fileButtons[i]);
@@ -100,7 +105,7 @@ public class UI implements ActionListener{
         similarityLabels = new JLabel[selectedFiles.length];
         for (int j = 0; j < selectedFiles.length; j++)
         {
-            similarityLabels[j] = new JLabel("Similarity with " + selectedFiles[j] + ": " + fileSimilarities[i][j]);
+            similarityLabels[j] = new JLabel("Similarity with " + selectedFiles[j].getName() + ": " + fileSimilarities[i][j]);
             panels.get("fileSimilarity").add(similarityLabels[j]);
         }
         panels.get("fileSimilarity").add(buttons.get("fileSimilarityBack"));
@@ -141,14 +146,18 @@ public class UI implements ActionListener{
     @Override
     public void actionPerformed(ActionEvent e) {
         int fileButtonSelected = -1;
-        for (int i = 0; i < selectedFiles.length; i++)
+        if (isInFileSelection)
         {
-            if (e.getSource() == fileButtons[i])
+            for (int i = 0; i < selectedFiles.length; i++)
             {
-                fileButtonSelected = i;
-                break;
-            }
+                if (e.getSource() == fileButtons[i])
+                {
+                    fileButtonSelected = i;
+                    break;
+                }
+            } 
         }
+        
 
         if (e.getSource() == buttons.get("openFile")) // User pressed "Open File(s) button on main page"
         {
@@ -192,16 +201,23 @@ public class UI implements ActionListener{
             {
                 createFileButtons();
                 loadFileSelectionPage();
+                isInFileSelection = true;
             }
         }
         else if (e.getSource() == buttons.get("fileSelectionBack")) // user clicked back button on file selection screen
         {
-            panels.get("fileSelection").removeAll();
             loadMainPage();
+            isInFileSelection = false;
         }
         else if (fileButtonSelected >= 0)
         {
-
+            loadFileSimilarity(fileButtonSelected);
+            isInFileSelection = false;
+        }
+        else if (e.getSource() == buttons.get("fileSimilarityBack"))
+        {
+            loadFileSelectionPage();
+            isInFileSelection = true;
         }
         
         frame.validate();
