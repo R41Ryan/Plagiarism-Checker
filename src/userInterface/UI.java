@@ -24,8 +24,8 @@ public class UI implements ActionListener{
     private HashMap<String, JPanel> panels;
     private HashMap<String, JButton> buttons;
     private HashMap<String, JTextArea> textAreas;
+    private HashMap<String, JScrollPane> scrollPanes;
     private JButton[] fileButtons;
-    private JLabel[] similarityLabels;
 
     private JFrame frame;
     
@@ -40,6 +40,7 @@ public class UI implements ActionListener{
         panels = new HashMap<String, JPanel>();
         buttons = new HashMap<String, JButton>();
         textAreas = new HashMap<String, JTextArea>();
+        scrollPanes = new HashMap<String, JScrollPane>();
 
         // Initialize JPanels *******************************************************************************
         panels.put("mainPage", new JPanel(new BorderLayout()));
@@ -64,6 +65,16 @@ public class UI implements ActionListener{
         textAreas.put("selectedFiles", new JTextArea(25, 100));
         textAreas.get("selectedFiles").setEditable(false);
 
+        // test areas for file similarity page
+        textAreas.put("fileSimilarity", new JTextArea(25, 25));
+        textAreas.get("fileSimilarity").setEditable(false);
+        textAreas.get("fileSimilarity").setLineWrap(true);
+
+        // Initialize scrollPanes **********************************************************************************************
+        
+        // scroll pane for file similarity page
+        scrollPanes.put("fileSimilarity", new JScrollPane(textAreas.get("fileSimilarity")));
+        scrollPanes.get("fileSimilarity").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         loadMainPage();
         isInFileSelection = false;
@@ -102,13 +113,13 @@ public class UI implements ActionListener{
     void loadFileSimilarity(int i)
     {
         panels.get("fileSimilarity").removeAll();
-        similarityLabels = new JLabel[selectedFiles.length];
+        textAreas.get("fileSimilarity").setText("");
         for (int j = 0; j < selectedFiles.length; j++)
         {
-            similarityLabels[j] = new JLabel("Similarity with " + selectedFiles[j].getName() + ": " + fileSimilarities[i][j]);
-            panels.get("fileSimilarity").add(similarityLabels[j]);
+            textAreas.get("fileSimilarity").append("Similarity with " + selectedFiles[j].getName() + ":\n" + String.format("%.3f", fileSimilarities[i][j]) + "\n\n");
         }
         panels.get("fileSimilarity").add(buttons.get("fileSimilarityBack"));
+        panels.get("fileSimilarity").add(scrollPanes.get("fileSimilarity"));
         frame.setContentPane(panels.get("fileSimilarity"));
     }
 
@@ -189,6 +200,7 @@ public class UI implements ActionListener{
         else if (e.getSource() == buttons.get("checkPlagiarism")) // User pressed check plagiarism button
         {
             calculateSimilarities();
+            /*
             for (int i = 0; i < selectedFiles.length; i++)
             {
                 for (int j = 0; j < selectedFiles.length; j++)
@@ -197,6 +209,7 @@ public class UI implements ActionListener{
                 }
                 System.out.println();
             }
+            */
             if (selectedFiles.length > 1)
             {
                 createFileButtons();
