@@ -24,7 +24,9 @@ public class UI implements ActionListener{
     private HashMap<String, JPanel> panels;
     private HashMap<String, JButton> buttons;
     private HashMap<String, JTextArea> textAreas;
+    private HashMap<String, JTextField> textFields;
     private HashMap<String, JScrollPane> scrollPanes;
+    private HashMap<String, JLabel> labels;
     private JButton[] fileButtons;
 
     private JFrame frame;
@@ -40,10 +42,12 @@ public class UI implements ActionListener{
         panels = new HashMap<String, JPanel>();
         buttons = new HashMap<String, JButton>();
         textAreas = new HashMap<String, JTextArea>();
+        textFields = new HashMap<String, JTextField>();
         scrollPanes = new HashMap<String, JScrollPane>();
+        labels = new HashMap<String, JLabel>();
 
         // Initialize JPanels *******************************************************************************
-        panels.put("mainPage", new JPanel(new BorderLayout()));
+        panels.put("mainPage", new JPanel(new GridBagLayout()));
         panels.put("fileSelection", new JPanel(new FlowLayout()));
         panels.put("fileSimilarity", new JPanel(new FlowLayout()));
 
@@ -62,19 +66,32 @@ public class UI implements ActionListener{
         // Initialize textAreas *****************************************************************************
 
         // text areas for mainPage
-        textAreas.put("selectedFiles", new JTextArea(25, 100));
+        textAreas.put("selectedFiles", new JTextArea(25, 25));
         textAreas.get("selectedFiles").setEditable(false);
+        textAreas.get("selectedFiles").setLineWrap(true);
 
         // test areas for file similarity page
         textAreas.put("fileSimilarity", new JTextArea(25, 25));
         textAreas.get("fileSimilarity").setEditable(false);
         textAreas.get("fileSimilarity").setLineWrap(true);
 
+        // Initialize textFields ********************************************************************************
+        
+        // text fields for mainPage
+        textFields.put("thresholdField", new JTextField());
+
         // Initialize scrollPanes **********************************************************************************************
         
+        // scroll pane for selected files
+        scrollPanes.put("selectedFiles", new JScrollPane(textAreas.get("selectedFiles")));
+        scrollPanes.get("selectedFiles").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
         // scroll pane for file similarity page
         scrollPanes.put("fileSimilarity", new JScrollPane(textAreas.get("fileSimilarity")));
         scrollPanes.get("fileSimilarity").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        // Initialize Labels ***************************************************************************************************
+        labels.put("thresholdValue", new JLabel("Plagiarism Threshold:"));
 
         loadMainPage();
         isInFileSelection = false;
@@ -87,13 +104,36 @@ public class UI implements ActionListener{
     // Load main page
     void loadMainPage()
     {
-        panels.get("mainPage").add(buttons.get("openFile"), BorderLayout.NORTH);
+        panels.get("mainPage").removeAll();
+
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 0;
+        panels.get("mainPage").add(buttons.get("openFile"), c);
+
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 1;
+        c.gridy = 0;
+        panels.get("mainPage").add(buttons.get("checkPlagiarism"), c);
+
+        c.gridx = 0;
+        c.gridy = 1;
+        panels.get("mainPage").add(labels.get("thresholdValue"), c);
+
+        c.gridx = 1;
+        c.gridy = 1;
+        panels.get("mainPage").add(textFields.get("thresholdField"), c);
+
         if (selectedFiles.length <= 0)
         {
             textAreas.get("selectedFiles").setText(" Selected Files:\n");
         }
-        panels.get("mainPage").add(textAreas.get("selectedFiles"), BorderLayout.CENTER);
-        panels.get("mainPage").add(buttons.get("checkPlagiarism"), BorderLayout.SOUTH);
+        c.gridx = 0;
+        c.gridy = 2;
+        c.gridwidth = 2;
+        panels.get("mainPage").add(scrollPanes.get("selectedFiles"), c);
+
         frame.setContentPane(panels.get("mainPage"));
     }
 
