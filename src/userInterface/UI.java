@@ -17,8 +17,10 @@ public class UI implements ActionListener{
     private File[] selectedFiles;
     private double[][] fileSimilarities;
 
-    // Flags for various purposes
+    // variables for various calculations
     boolean isInFileSelection;
+    boolean usingThreshold;
+    float thresholdValue;
 
     // Components that are graphically displayed
     private HashMap<String, JPanel> panels;
@@ -27,6 +29,7 @@ public class UI implements ActionListener{
     private HashMap<String, JTextField> textFields;
     private HashMap<String, JScrollPane> scrollPanes;
     private HashMap<String, JLabel> labels;
+    private HashMap<String, JCheckBox> checkboxes;
     private JButton[] fileButtons;
 
     private JFrame frame;
@@ -45,6 +48,7 @@ public class UI implements ActionListener{
         textFields = new HashMap<String, JTextField>();
         scrollPanes = new HashMap<String, JScrollPane>();
         labels = new HashMap<String, JLabel>();
+        checkboxes = new HashMap<String, JCheckBox>();
 
         // Initialize JPanels *******************************************************************************
         panels.put("mainPage", new JPanel(new GridBagLayout()));
@@ -91,7 +95,9 @@ public class UI implements ActionListener{
         scrollPanes.get("fileSimilarity").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         // Initialize Labels ***************************************************************************************************
-        labels.put("thresholdValue", new JLabel("Plagiarism Threshold:"));
+
+        // Initialize checkboxes ***********************************************************************************************
+        checkboxes.put("thresholdValue", new JCheckBox("Plagiarism Threshold:"));
 
         loadMainPage();
         isInFileSelection = false;
@@ -119,7 +125,7 @@ public class UI implements ActionListener{
 
         c.gridx = 0;
         c.gridy = 1;
-        panels.get("mainPage").add(labels.get("thresholdValue"), c);
+        panels.get("mainPage").add(checkboxes.get("thresholdValue"), c);
 
         c.gridx = 1;
         c.gridy = 1;
@@ -156,7 +162,15 @@ public class UI implements ActionListener{
         textAreas.get("fileSimilarity").setText("");
         for (int j = 0; j < selectedFiles.length; j++)
         {
-            textAreas.get("fileSimilarity").append("Similarity with " + selectedFiles[j].getName() + ":\n" + String.format("%.3f", fileSimilarities[i][j]) + "\n\n");
+            String toPrint = "Similarity with " + selectedFiles[j].getName() + ":\n" + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
+            if (usingThreshold)
+            {
+                if (fileSimilarities[i][j] >= thresholdValue)
+                {
+                    toPrint = "*** Similarity with " + selectedFiles[j].getName() + ": ***\n" + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
+                }
+            }
+            textAreas.get("fileSimilarity").append(toPrint);
         }
         panels.get("fileSimilarity").add(buttons.get("fileSimilarityBack"));
         panels.get("fileSimilarity").add(scrollPanes.get("fileSimilarity"));
@@ -252,6 +266,11 @@ public class UI implements ActionListener{
             */
             if (selectedFiles.length > 1)
             {
+                usingThreshold = checkboxes.get("thresholdValue").isSelected();
+                if (usingThreshold)
+                {
+                    thresholdValue = Float.valueOf(textFields.get("thresholdField").getText());
+                }
                 createFileButtons();
                 loadFileSelectionPage();
                 isInFileSelection = true;
