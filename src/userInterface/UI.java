@@ -41,6 +41,7 @@ public class UI implements ActionListener{
         frame = new JFrame("Plagiarism Checker");
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setResizable(false);
 
         panels = new HashMap<String, JPanel>();
         buttons = new HashMap<String, JButton>();
