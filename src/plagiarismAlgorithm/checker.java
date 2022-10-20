@@ -16,6 +16,7 @@ public class Checker {
 
     public HashMap<String, Integer> getFreqencyMapPDF(File file)
     {
+        System.out.println("Reading " + file.getName());
         HashMap<String, Integer> toReturn = new HashMap<String, Integer>();
         PDDocument document = new PDDocument();
         try {
@@ -66,6 +67,7 @@ public class Checker {
         for (String string : words) {
             System.out.printf("%s : %d\n", string, toReturn.get(string));
         }
+        System.out.println("*");
         */
 
         return toReturn;
@@ -137,11 +139,7 @@ public class Checker {
     public double vectorAngle(HashMap<String, Integer> wordFrequency1, HashMap<String, Integer> wordFrequency2)
     {
         int numerator = dotProduct(wordFrequency1, wordFrequency2);
-        double denominator = Math.sqrt(dotProduct(wordFrequency1, wordFrequency1) * dotProduct(wordFrequency2, wordFrequency2));
-        if (dotProduct(wordFrequency1, wordFrequency1) * dotProduct(wordFrequency2, wordFrequency2) < 0)
-        {
-            System.out.println("Square rooting a negative number occurred");
-        }
+        double denominator = Math.sqrt(dotProduct(wordFrequency1, wordFrequency1)) * Math.sqrt(dotProduct(wordFrequency2, wordFrequency2));
         return 1f - Math.acos(numerator/denominator) / (3.1416f / 2f);
     }
 

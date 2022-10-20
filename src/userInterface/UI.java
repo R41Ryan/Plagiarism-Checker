@@ -9,6 +9,9 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 import java.io.*;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 
 import plagiarismAlgorithm.*;
 
@@ -272,7 +275,7 @@ public class UI implements ActionListener{
 
         if (e.getSource() == buttons.get("openFile")) // User pressed "Open File(s) button on main page"
         {
-            JFileChooser fileChooser = new JFileChooser(FileSystemView.getFileSystemView());
+            JFileChooser fileChooser = new JFileChooser(Path.of("").toAbsolutePath().toString(), FileSystemView.getFileSystemView());
 
             fileChooser.setMultiSelectionEnabled(true);
             fileChooser.setAcceptAllFileFilterUsed(false);
@@ -303,7 +306,7 @@ public class UI implements ActionListener{
         }
         else if (e.getSource() == buttons.get("openFolder"))
         {
-            JFileChooser fileChooser = new JFileChooser(FileSystemView.getFileSystemView());
+            JFileChooser fileChooser = new JFileChooser(Path.of("").toAbsolutePath().toString(), FileSystemView.getFileSystemView());
 
             fileChooser.setDialogTitle("Select a folder");
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
