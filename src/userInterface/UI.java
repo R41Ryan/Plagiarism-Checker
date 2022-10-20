@@ -17,9 +17,10 @@ import plagiarismAlgorithm.*;
 
 public class UI implements ActionListener{
 
-    // Data members used to return information
+    // Data members used information and calculations between functions
     private List<File> selectedFiles;
     private double[][] fileSimilarities;
+    private HashMap<String, Integer>[] fileWordFrequencies;
 
     // variables for various calculations
     boolean isInFileSelection;
@@ -214,17 +215,13 @@ public class UI implements ActionListener{
     {
         fileSimilarities = new double[selectedFiles.size()][selectedFiles.size()];
         Checker checker = new Checker();
+        fileWordFrequencies = checker.getFrequencyMapPDF(selectedFiles);
+
         for (int i = 0; i < selectedFiles.size(); i++)
         {
             for (int j = 0; j < selectedFiles.size(); j++)
             {
-                try {
-                    fileSimilarities[i][j] = checker.getSimilarityPDF(selectedFiles.get(i), selectedFiles.get(j));
-                } catch (IOException e) {
-                    System.out.println("Error while calculating similarity\n");
-                    e.printStackTrace();
-                    return;
-                } 
+                fileSimilarities[i][j] = checker.getSimilarity(fileWordFrequencies[i], fileWordFrequencies[j]);
             }
         }
     }

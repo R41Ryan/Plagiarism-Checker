@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.List;
 import java.lang.Math;
 import org.apache.pdfbox.pdmodel.*;
 import org.apache.pdfbox.Loader;
@@ -14,7 +15,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
 
 public class Checker {
 
-    public HashMap<String, Integer> getFreqencyMapPDF(File file)
+    public HashMap<String, Integer> getFrequencyMapPDF(File file)
     {
         System.out.println("Reading " + file.getName());
         HashMap<String, Integer> toReturn = new HashMap<String, Integer>();
@@ -73,7 +74,18 @@ public class Checker {
         return toReturn;
     }
 
-    public HashMap<String, Integer> getFreqencyMap(File file)
+    public HashMap<String, Integer>[] getFrequencyMapPDF(List<File> files)
+    {
+        HashMap<String, Integer> toReturn[] = new HashMap[files.size()];
+        for (int i = 0; i < files.size(); i++)
+        {
+            toReturn[i] = getFrequencyMapPDF(files.get(i));
+        }
+        
+        return toReturn;
+    }
+
+    public HashMap<String, Integer> getFrequencyMap(File file)
     {
         HashMap<String, Integer> toReturn = new HashMap<String, Integer>();
         Scanner scanner;
@@ -145,15 +157,20 @@ public class Checker {
 
     public double getSimilarityPDF(File file1, File file2) throws IOException
     {
-        HashMap<String, Integer> wordFrequencyMap1 = getFreqencyMapPDF(file1);
-        HashMap<String, Integer> wordFrequencyMap2 = getFreqencyMapPDF(file2);
+        HashMap<String, Integer> wordFrequencyMap1 = getFrequencyMapPDF(file1);
+        HashMap<String, Integer> wordFrequencyMap2 = getFrequencyMapPDF(file2);
         return vectorAngle(wordFrequencyMap1, wordFrequencyMap2);
     }
 
     public double getSimilarity(File file1, File file2) throws IOException
     {
-        HashMap<String, Integer> wordFrequencyMap1 = getFreqencyMap(file1);
-        HashMap<String, Integer> wordFrequencyMap2 = getFreqencyMap(file2);
+        HashMap<String, Integer> wordFrequencyMap1 = getFrequencyMap(file1);
+        HashMap<String, Integer> wordFrequencyMap2 = getFrequencyMap(file2);
+        return vectorAngle(wordFrequencyMap1, wordFrequencyMap2);
+    }
+
+    public double getSimilarity(HashMap<String, Integer> wordFrequencyMap1, HashMap<String, Integer> wordFrequencyMap2)
+    {
         return vectorAngle(wordFrequencyMap1, wordFrequencyMap2);
     }
 }
