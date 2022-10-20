@@ -138,6 +138,10 @@ public class Checker {
     {
         int numerator = dotProduct(wordFrequency1, wordFrequency2);
         double denominator = Math.sqrt(dotProduct(wordFrequency1, wordFrequency1) * dotProduct(wordFrequency2, wordFrequency2));
+        if (dotProduct(wordFrequency1, wordFrequency1) * dotProduct(wordFrequency2, wordFrequency2) < 0)
+        {
+            System.out.println("Square rooting a negative number occurred");
+        }
         return 1f - Math.acos(numerator/denominator) / (3.1416f / 2f);
     }
 
