@@ -245,12 +245,10 @@ public class UI implements ActionListener{
         {
             if (currentFile.isDirectory())
             {
-                System.out.println(currentFile.getName() + " is a folder. Calling recursively. *************************");
                 addToSelectedPDF(currentFile);
             }
             else if (currentFile.getName().endsWith(".pdf"))
             {
-                System.out.println(currentFile.getName() + " is a file. Adding");
                 selectedFiles.add(currentFile);
             }
         }
