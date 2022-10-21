@@ -328,6 +328,18 @@ public class UI implements ActionListener{
         }
         else if (e.getSource() == buttons.get("checkPlagiarism")) // User pressed check plagiarism button
         {
+            usingThreshold = checkboxes.get("thresholdValue").isSelected();
+            if (usingThreshold)
+            {
+                try {
+                    thresholdValue = Float.valueOf(textFields.get("thresholdField").getText());
+                }
+                catch (NumberFormatException n)
+                {
+                    JOptionPane.showMessageDialog(frame, "Enter a valid number for threshold", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }
             calculateSimilarities();
             /*
             for (int i = 0; i < selectedFiles.length; i++)
@@ -341,11 +353,6 @@ public class UI implements ActionListener{
             */
             if (selectedFiles.size() > 1)
             {
-                usingThreshold = checkboxes.get("thresholdValue").isSelected();
-                if (usingThreshold)
-                {
-                    thresholdValue = Float.valueOf(textFields.get("thresholdField").getText());
-                }
                 createFileButtons();
                 loadFileSelectionPage();
                 isInFileSelection = true;
