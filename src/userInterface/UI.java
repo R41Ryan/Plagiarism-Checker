@@ -103,6 +103,7 @@ public class UI implements ActionListener{
         // scroll pane for file selection page
         scrollPanes.put("fileSelection", new JScrollPane(panels.get("fileSelectionInner")));
         scrollPanes.get("fileSelection").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPanes.get("fileSelection").setPreferredSize((new Dimension(650, 400)));
 
         // scroll pane for file similarity page
         scrollPanes.put("fileSimilarity", new JScrollPane(textAreas.get("fileSimilarity")));
@@ -191,7 +192,7 @@ public class UI implements ActionListener{
         buttons.get("filesOverThreshold").setText(thresholdString);
 
 
-        c.fill = GridBagConstraints.BOTH;
+        c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 1;
         c.gridwidth = 2;
@@ -199,7 +200,7 @@ public class UI implements ActionListener{
         {
             panels.get("fileSelectionInner").add(fileButtons[i]);
         }
-        panels.get("fileSelection").add(panels.get("fileSelectionInner"), c);
+        panels.get("fileSelection").add(scrollPanes.get("fileSelection"), c);
 
         frame.setContentPane(panels.get("fileSelection"));
     }
@@ -256,6 +257,7 @@ public class UI implements ActionListener{
         {
             fileButtons[i] = new JButton(selectedFiles.get(i).getName());
             fileButtons[i].addActionListener(this);
+            fileButtons[i].setPreferredSize(new Dimension(300, 20));
         }
     }
 
