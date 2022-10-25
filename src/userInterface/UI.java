@@ -21,11 +21,10 @@ public class UI implements ActionListener{
     private List<File> selectedFiles;
     private double[][] fileSimilarities;
     private HashMap<String, Integer>[] fileWordFrequencies;
-
-    // variables for various calculations
-    boolean isInFileSelection;
-    boolean usingThreshold;
-    float thresholdValue;
+    private int numOfOverThreshold;
+    private boolean isInFileSelection;
+    private boolean usingThreshold;
+    private float thresholdValue;
 
     // Components that are graphically displayed
     private HashMap<String, JPanel> panels;
@@ -73,6 +72,8 @@ public class UI implements ActionListener{
         buttons.get("checkPlagiarism").addActionListener(this);
         buttons.put("fileSelectionBack", new JButton("Back"));
         buttons.get("fileSelectionBack").addActionListener(this);
+        buttons.put("filesOverThreshold", new JButton("Files over Threshold"));
+        buttons.get("filesOverThreshold").addActionListener(this);
         buttons.put("fileSimilarityBack", new JButton("Back"));
         buttons.get("fileSimilarityBack").addActionListener(this);
 
@@ -174,11 +175,26 @@ public class UI implements ActionListener{
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 0;
         c.gridy = 0;
+        c.gridwidth = 1;
         panels.get("fileSelection").add(buttons.get("fileSelectionBack"), c);
+
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 1;
+        c.gridy = 0;
+        c.gridwidth = 1;
+        panels.get("fileSelection").add(buttons.get("filesOverThreshold"), c);
+        String thresholdString = "Files over Threshold (None)";
+        if (usingThreshold && numOfOverThreshold > 0)
+        {
+            thresholdString = "Files over Threshold (" + numOfOverThreshold + ")";
+        }
+        buttons.get("filesOverThreshold").setText(thresholdString);
+
 
         c.fill = GridBagConstraints.BOTH;
         c.gridx = 0;
         c.gridy = 1;
+        c.gridwidth = 2;
         for (int i = 0; i < fileButtons.length; i++)
         {
             panels.get("fileSelectionInner").add(fileButtons[i]);
@@ -213,6 +229,7 @@ public class UI implements ActionListener{
     // Calculate the similarities for all files
     void calculateSimilarities()
     {
+        numOfOverThreshold = 0;
         fileSimilarities = new double[selectedFiles.size()][selectedFiles.size()];
         Checker checker = new Checker();
         fileWordFrequencies = checker.getFrequencyMapPDF(selectedFiles);
@@ -222,6 +239,11 @@ public class UI implements ActionListener{
             for (int j = 0; j < selectedFiles.size(); j++)
             {
                 fileSimilarities[i][j] = checker.getSimilarity(fileWordFrequencies[i], fileWordFrequencies[j]);
+
+                if (usingThreshold && fileSimilarities[i][j] >= thresholdValue)
+                {
+                    numOfOverThreshold++;
+                }
             }
         }
     }
@@ -362,6 +384,10 @@ public class UI implements ActionListener{
         {
             loadMainPage();
             isInFileSelection = false;
+        }
+        else if (e.getSource() == buttons.get("filesOverThreshold"))
+        {
+            
         }
         else if (fileButtonSelected >= 0)
         {
