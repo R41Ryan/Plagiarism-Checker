@@ -1,5 +1,6 @@
 package userInterface;
 
+import javax.lang.model.util.ElementScanner14;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.filechooser.FileSystemView;
@@ -25,6 +26,9 @@ public class UI implements ActionListener{
     private boolean isInFileSelection;
     private boolean usingThreshold;
     private float thresholdValue;
+    private int[][] overThresholdSimilarities;  // It is an array of length numOfOverThreshold, 
+                                                // where each element is itself another array of length 2, 
+                                                // where each refers to an index in fileSimilarities
 
     // Components that are graphically displayed
     private HashMap<String, JPanel> panels;
@@ -60,6 +64,7 @@ public class UI implements ActionListener{
         panels.put("fileSelectionInner", new JPanel(new GridLayout(0, 2)));
         panels.put("fileSelection", new JPanel(new GridBagLayout()));
         panels.put("fileSimilarity", new JPanel(new FlowLayout()));
+        panels.put("overThreshold", new JPanel(new FlowLayout()));
 
         // Initialize Buttons *******************************************************************************
 
@@ -76,18 +81,25 @@ public class UI implements ActionListener{
         buttons.get("filesOverThreshold").addActionListener(this);
         buttons.put("fileSimilarityBack", new JButton("Back"));
         buttons.get("fileSimilarityBack").addActionListener(this);
+        buttons.put("overThresholdBack", new JButton("Back"));
+        buttons.get("overThresholdBack").addActionListener(this);
 
         // Initialize textAreas *****************************************************************************
 
         // text areas for mainPage
-        textAreas.put("selectedFiles", new JTextArea(25, 25));
+        textAreas.put("selectedFiles", new JTextArea(25, 50));
         textAreas.get("selectedFiles").setEditable(false);
         textAreas.get("selectedFiles").setLineWrap(true);
 
-        // test areas for file similarity page
-        textAreas.put("fileSimilarity", new JTextArea(25, 25));
+        // text areas for file similarity page
+        textAreas.put("fileSimilarity", new JTextArea(25, 50));
         textAreas.get("fileSimilarity").setEditable(false);
         textAreas.get("fileSimilarity").setLineWrap(true);
+
+        // text areas for over threshold panel
+        textAreas.put("overThreshold", new JTextArea(25, 50));
+        textAreas.get("overThreshold").setEditable(false);
+        textAreas.get("overThreshold").setLineWrap(true);
 
         // Initialize textFields ********************************************************************************
         
@@ -108,6 +120,10 @@ public class UI implements ActionListener{
         // scroll pane for file similarity page
         scrollPanes.put("fileSimilarity", new JScrollPane(textAreas.get("fileSimilarity")));
         scrollPanes.get("fileSimilarity").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        // scroll pane for over threshold page
+        scrollPanes.put("overThreshold", new JScrollPane(textAreas.get("overThreshold")));
+        scrollPanes.get("overThreshold").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         // Initialize Labels ***************************************************************************************************
 
@@ -227,6 +243,24 @@ public class UI implements ActionListener{
         frame.setContentPane(panels.get("fileSimilarity"));
     }
 
+    // Loads the panel that displays the file pairs with similarities over the thesholdValue.
+    void loadOverThresholdPanel()
+    {
+        panels.get("overThreshold").removeAll();
+        panels.get("overThreshold").add(buttons.get("overThresholdBack"));
+        textAreas.get("overThreshold").setText("");
+        for (int i = 0; i < numOfOverThreshold; i++)
+        {
+            File file1 = selectedFiles.get(overThresholdSimilarities[i][0]);
+            File file2 = selectedFiles.get(overThresholdSimilarities[i][1]);
+            textAreas.get("overThreshold").append(file1.getName() + " vs. " + file2.getName()
+             + "\n" + String.format("%.3f", fileSimilarities[overThresholdSimilarities[i][0]][overThresholdSimilarities[i][1]])
+             + "\n\n");
+        }
+        panels.get("overThreshold").add(scrollPanes.get("overThreshold"));
+        frame.setContentPane(panels.get("overThreshold"));
+    }
+
     // Calculate the similarities for all files
     void calculateSimilarities()
     {
@@ -240,12 +274,12 @@ public class UI implements ActionListener{
             for (int j = 0; j < selectedFiles.size(); j++)
             {
                 fileSimilarities[i][j] = checker.getSimilarity(fileWordFrequencies[i], fileWordFrequencies[j]);
-
-                if (usingThreshold && fileSimilarities[i][j] >= thresholdValue)
-                {
-                    numOfOverThreshold++;
-                }
             }
+        }
+
+        if (usingThreshold)
+        {
+            fillOverThresholdSimilarities();
         }
     }
 
@@ -258,6 +292,78 @@ public class UI implements ActionListener{
             fileButtons[i] = new JButton(selectedFiles.get(i).getName());
             fileButtons[i].addActionListener(this);
             fileButtons[i].setPreferredSize(new Dimension(300, 20));
+        }
+    }
+
+    // Retrieves the similarities that are over the threshold in fileSimilarities, and put the pairs of indices into
+    // overThresholdSimilarities
+    void fillOverThresholdSimilarities()
+    {
+        if (usingThreshold)
+        {
+            for (int i = 0; i < selectedFiles.size(); i++)
+            {
+                for (int j = i; j < selectedFiles.size(); j++)
+                {
+                    if (fileSimilarities[i][j] >= thresholdValue && i != j)
+                    {
+                        numOfOverThreshold++;
+                    }
+                }
+            }
+            overThresholdSimilarities = new int[numOfOverThreshold][2];
+
+            int overThresholdIndex = 0;
+            for (int i = 0; i < selectedFiles.size(); i++)
+            {
+                for (int j = i; j < selectedFiles.size(); j++)
+                {
+                    if (fileSimilarities[i][j] >= thresholdValue && i != j)
+                    {
+                        overThresholdSimilarities[overThresholdIndex][0] = i;
+                        overThresholdSimilarities[overThresholdIndex][1] = j;
+                        overThresholdIndex++;
+                    }
+                }
+            }
+        }
+    }
+
+    // Switch the 2 file index pairs in overThresholdSimilarities.
+    void switchOverThresholdSimilarities(int a, int b)
+    {
+        if (a < overThresholdSimilarities.length && b < overThresholdSimilarities.length)
+        {
+            int[] temp = overThresholdSimilarities[a];
+            overThresholdSimilarities[a] = overThresholdSimilarities[b];
+            overThresholdSimilarities[b] = temp;
+        }
+    }
+
+    // Sort the overthresholdSimilarities array such that the similarities of the two file indices are in descending order.
+    void sortOverThresholdSimilarities()
+    {
+        if (overThresholdSimilarities.length > 0)
+        {
+            for (int i = 1; i < overThresholdSimilarities.length; i++)
+            {
+                int currentIndex = i;
+                double similarityValue = fileSimilarities[overThresholdSimilarities[i][0]][overThresholdSimilarities[i][1]];
+                boolean isGreaterThanPrev = true;
+                while (currentIndex >= 0 && isGreaterThanPrev)
+                {
+                    double prevSimilarity = fileSimilarities[overThresholdSimilarities[currentIndex - 1][0]][overThresholdSimilarities[currentIndex - 1][1]];
+                    if (prevSimilarity < similarityValue)
+                    {
+                        switchOverThresholdSimilarities(i, currentIndex);
+                        currentIndex--;
+                    }
+                    else
+                    {
+                        isGreaterThanPrev = false;
+                    }
+                }
+            }
         }
     }
 
@@ -389,7 +495,14 @@ public class UI implements ActionListener{
         }
         else if (e.getSource() == buttons.get("filesOverThreshold"))
         {
-            
+            if (usingThreshold)
+            {
+                loadOverThresholdPanel();
+            }
+        }
+        else if (e.getSource() == buttons.get("overThresholdBack"))
+        {
+            loadFileSelectionPage();
         }
         else if (fileButtonSelected >= 0)
         {
