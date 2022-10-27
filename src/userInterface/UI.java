@@ -29,6 +29,7 @@ public class UI implements ActionListener{
     private int[][] overThresholdSimilarities;  // It is an array of length numOfOverThreshold, 
                                                 // where each element is itself another array of length 2, 
                                                 // where each refers to an index in fileSimilarities
+    private boolean needToCalculate;
 
     // Components that are graphically displayed
     private HashMap<String, JPanel> panels;
@@ -132,6 +133,7 @@ public class UI implements ActionListener{
 
         loadMainPage();
         isInFileSelection = false;
+        needToCalculate = true;
         frame.pack();
         frame.validate();
     }
@@ -231,7 +233,7 @@ public class UI implements ActionListener{
             String toPrint = "Similarity with " + selectedFiles.get(j).getName() + ":\n" + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
             if (usingThreshold)
             {
-                if (fileSimilarities[i][j] >= thresholdValue)
+                if (fileSimilarities[i][j] >= thresholdValue && i != j)
                 {
                     toPrint = "*** Similarity with " + selectedFiles.get(j).getName() + ": ***\n" + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
                 }
@@ -267,7 +269,11 @@ public class UI implements ActionListener{
         numOfOverThreshold = 0;
         fileSimilarities = new double[selectedFiles.size()][selectedFiles.size()];
         Checker checker = new Checker();
-        fileWordFrequencies = checker.getFrequencyMapPDF(selectedFiles);
+        if (needToCalculate)
+        {
+            fileWordFrequencies = checker.getFrequencyMapPDF(selectedFiles);
+            needToCalculate = false;
+        }
 
         for (int i = 0; i < selectedFiles.size(); i++)
         {
@@ -429,6 +435,8 @@ public class UI implements ActionListener{
                     textAreas.get("selectedFiles").append("\n     " + selectedFiles.get(i).getName());
                     i++;
                 }
+
+                needToCalculate = true;
             }
         }
         else if (e.getSource() == buttons.get("openFolder"))
@@ -455,6 +463,8 @@ public class UI implements ActionListener{
                     i++;
                 }
             }
+
+            needToCalculate = true;
         }
         else if (e.getSource() == buttons.get("checkPlagiarism")) // User pressed check plagiarism button
         {
@@ -470,7 +480,6 @@ public class UI implements ActionListener{
                     return;
                 }
             }
-            calculateSimilarities();
             /*
             for (int i = 0; i < selectedFiles.length; i++)
             {
@@ -483,6 +492,7 @@ public class UI implements ActionListener{
             */
             if (selectedFiles.size() > 1)
             {
+                calculateSimilarities();
                 createFileButtons();
                 loadFileSelectionPage();
                 isInFileSelection = true;
