@@ -1,17 +1,15 @@
 package userInterface;
 
-import javax.lang.model.util.ElementScanner14;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.filechooser.FileSystemView;
+
 
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 import java.io.*;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
 import plagiarismAlgorithm.*;
@@ -39,6 +37,7 @@ public class UI implements ActionListener{
                                                 // where each element is itself another array of length 2, 
                                                 // where each refers to an index in fileSimilarities
     private boolean needToCalculate;
+    private List<File> filesWithImages;
 
     // Components that are graphically displayed
     private HashMap<String, JPanel> panels;
@@ -55,6 +54,7 @@ public class UI implements ActionListener{
     public UI() {
         // Initialize information data members
         selectedFiles = new ArrayList<File>();
+        filesWithImages = new ArrayList<File>();
 
         frame = new JFrame("Plagiarism Checker");
         frame.setVisible(true);
@@ -75,6 +75,7 @@ public class UI implements ActionListener{
         panels.put("fileSelection", new JPanel(new GridBagLayout()));
         panels.put("fileSimilarity", new JPanel(new FlowLayout()));
         panels.put("overThreshold", new JPanel(new FlowLayout()));
+        panels.put("withImages", new JPanel(new FlowLayout()));
 
         // Initialize Buttons *******************************************************************************
 
@@ -85,14 +86,26 @@ public class UI implements ActionListener{
         buttons.get("openFolder").addActionListener(this);
         buttons.put("checkPlagiarism", new JButton("Check Plagiarism"));
         buttons.get("checkPlagiarism").addActionListener(this);
+
+        // Buttons for file selection page
         buttons.put("fileSelectionBack", new JButton("Back"));
         buttons.get("fileSelectionBack").addActionListener(this);
         buttons.put("filesOverThreshold", new JButton("Files over Threshold"));
         buttons.get("filesOverThreshold").addActionListener(this);
-        buttons.put("fileSimilarityBack", new JButton("Back"));
-        buttons.get("fileSimilarityBack").addActionListener(this);
+        buttons.put("withImages", new JButton("Files with images"));
+        buttons.get("withImages").addActionListener(this);
+        
+        // buttons for files over threshold page
         buttons.put("overThresholdBack", new JButton("Back"));
         buttons.get("overThresholdBack").addActionListener(this);
+
+        // buttons for file similarity page
+        buttons.put("fileSimilarityBack", new JButton("Back"));
+        buttons.get("fileSimilarityBack").addActionListener(this);
+
+        // buttons for files with images page
+        buttons.put("withImagesBack", new JButton("Back"));
+        buttons.get("withImagesBack").addActionListener(this);
 
         // Initialize textAreas *****************************************************************************
 
@@ -110,6 +123,11 @@ public class UI implements ActionListener{
         textAreas.put("overThreshold", new JTextArea(25, 50));
         textAreas.get("overThreshold").setEditable(false);
         textAreas.get("overThreshold").setLineWrap(true);
+
+        // text areas for with images panel
+        textAreas.put("withImages", new JTextArea(25, 50));
+        textAreas.get("withImages").setEditable(false);
+        textAreas.get("withImages").setLineWrap(true);
 
         // Initialize textFields ********************************************************************************
         
@@ -134,6 +152,10 @@ public class UI implements ActionListener{
         // scroll pane for over threshold page
         scrollPanes.put("overThreshold", new JScrollPane(textAreas.get("overThreshold")));
         scrollPanes.get("overThreshold").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        // scroll pane for with images page
+        scrollPanes.put("withImages", new JScrollPane(textAreas.get("withImages")));
+        scrollPanes.get("withImages").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         // Initialize Labels ***************************************************************************************************
 
@@ -218,11 +240,22 @@ public class UI implements ActionListener{
         }
         buttons.get("filesOverThreshold").setText(thresholdString);
 
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 2;
+        c.gridy = 0;
+        c.gridwidth = 1;
+        panels.get("fileSelection").add(buttons.get("withImages"), c);
+        String withImagesString = "Files over Threshold (None)";
+        if (filesWithImages.size() > 0)
+        {
+            withImagesString = "Files with images (" + filesWithImages.size() + ")";
+        }
+        buttons.get("withImages").setText(withImagesString);
 
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 1;
-        c.gridwidth = 2;
+        c.gridwidth = 3;
         for (int i = 0; i < fileButtons.length; i++)
         {
             panels.get("fileSelectionInner").add(fileButtons[i]);
@@ -272,6 +305,20 @@ public class UI implements ActionListener{
         frame.setContentPane(panels.get("overThreshold"));
     }
 
+    // Loads the panel that displays the files that have images
+    void loadWithImagesPanel()
+    {
+        panels.get("withImages").removeAll();
+        panels.get("withImages").add(buttons.get("withImagesBack"));
+        textAreas.get("withImages").setText("");
+        for (int i = 0; i < filesWithImages.size(); i++)
+        {
+            textAreas.get("withImages").append(filesWithImages.get(i).getName() + "\n\n");
+        }
+        panels.get("withImages").add(scrollPanes.get("withImages"));
+        frame.setContentPane(panels.get("withImages"));
+    }
+
     // Calculate the similarities for all files
     void calculateSimilarities()
     {
@@ -281,7 +328,6 @@ public class UI implements ActionListener{
         if (needToCalculate)
         {
             fileWordFrequencies = checker.getFrequencyMapPDF(selectedFiles);
-            needToCalculate = false;
         }
 
         for (int i = 0; i < selectedFiles.size(); i++)
@@ -302,12 +348,15 @@ public class UI implements ActionListener{
     // Create the buttons for the selected files
     void createFileButtons()
     {
-        fileButtons = new JButton[selectedFiles.size()];
-        for (int i = 0; i < selectedFiles.size(); i++)
+        if (needToCalculate)
         {
-            fileButtons[i] = new JButton(selectedFiles.get(i).getName());
-            fileButtons[i].addActionListener(this);
-            fileButtons[i].setPreferredSize(new Dimension(300, 20));
+            fileButtons = new JButton[selectedFiles.size()];
+            for (int i = 0; i < selectedFiles.size(); i++)
+            {
+                fileButtons[i] = new JButton(selectedFiles.get(i).getName());
+                fileButtons[i].addActionListener(this);
+                fileButtons[i].setPreferredSize(new Dimension(300, 20));
+            }
         }
     }
 
@@ -396,6 +445,32 @@ public class UI implements ActionListener{
             else if (currentFile.getName().endsWith(".pdf"))
             {
                 selectedFiles.add(currentFile);
+            }
+        }
+    }
+
+    // Check the selectedFiles to see which has images. If it does, add them to the filesWithImages List
+    void checkForImages() throws IOException
+    {
+        if (needToCalculate)
+        {
+            filesWithImages.clear();
+            ImageChecker checker;
+            try {
+                checker = new ImageChecker();
+            } catch (IOException e) {
+                System.out.printf("Unable to open Image Checker\n");
+                e.printStackTrace();
+                return;
+            }
+            for (int i = 0; i < selectedFiles.size(); i++)
+            {
+                checker.loadFile(selectedFiles.get(i));
+                checker.processFile();
+                if (checker.getNumOfImages() > 0)
+                {
+                    filesWithImages.add(selectedFiles.get(i));
+                }
             }
         }
     }
@@ -507,7 +582,14 @@ public class UI implements ActionListener{
             if (selectedFiles.size() > 1)
             {
                 calculateSimilarities();
+                try {
+                    checkForImages();
+                } catch (IOException e1) {
+                    System.out.printf("Error while checking images\n");
+                    e1.printStackTrace();
+                }
                 createFileButtons();
+                needToCalculate = false;
                 loadFileSelectionPage();
                 isInFileSelection = true;
             }
@@ -534,6 +616,16 @@ public class UI implements ActionListener{
             isInFileSelection = false;
         }
         else if (e.getSource() == buttons.get("fileSimilarityBack"))
+        {
+            loadFileSelectionPage();
+            isInFileSelection = true;
+        }
+        else if (e.getSource() == buttons.get("withImages"))
+        {
+            loadWithImagesPanel();
+            isInFileSelection = false;
+        }
+        else if (e.getSource() == buttons.get("withImagesBack"))
         {
             loadFileSelectionPage();
             isInFileSelection = true;

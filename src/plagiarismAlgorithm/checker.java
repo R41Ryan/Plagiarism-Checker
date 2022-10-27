@@ -33,6 +33,7 @@ public class Checker {
         String pageText;
         try {
             pageText = stripper.getText(document);
+            document.close();
         } catch (IOException e1) {
             System.out.println("Unable to get text from pdf!");
             e1.printStackTrace();
