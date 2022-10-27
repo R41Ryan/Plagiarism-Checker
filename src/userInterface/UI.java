@@ -16,6 +16,15 @@ import java.nio.file.Path;
 
 import plagiarismAlgorithm.*;
 
+// Sort method for a Collection of Files
+class SortByFileName implements Comparator<File>
+{
+    @Override
+    public int compare(File o1, File o2) {
+        return o1.getName().compareTo(o2.getName());
+    }
+}
+
 public class UI implements ActionListener{
 
     // Data members used information and calculations between functions
@@ -286,6 +295,7 @@ public class UI implements ActionListener{
         if (usingThreshold)
         {
             fillOverThresholdSimilarities();
+            sortOverThresholdSimilarities();
         }
     }
 
@@ -356,12 +366,12 @@ public class UI implements ActionListener{
                 int currentIndex = i;
                 double similarityValue = fileSimilarities[overThresholdSimilarities[i][0]][overThresholdSimilarities[i][1]];
                 boolean isGreaterThanPrev = true;
-                while (currentIndex >= 0 && isGreaterThanPrev)
+                while (currentIndex > 0 && isGreaterThanPrev)
                 {
                     double prevSimilarity = fileSimilarities[overThresholdSimilarities[currentIndex - 1][0]][overThresholdSimilarities[currentIndex - 1][1]];
                     if (prevSimilarity < similarityValue)
                     {
-                        switchOverThresholdSimilarities(i, currentIndex);
+                        switchOverThresholdSimilarities(currentIndex - 1, currentIndex);
                         currentIndex--;
                     }
                     else
@@ -427,6 +437,8 @@ public class UI implements ActionListener{
                     selectedFiles.add(file);
                 }
 
+                Collections.sort(selectedFiles, new SortByFileName());
+
                 int i = 0;
                 textAreas.get("selectedFiles").setText(" Selected Files:\n");
 
@@ -452,7 +464,9 @@ public class UI implements ActionListener{
             {
                 selectedFiles.clear();
                 File directory = new File(fileChooser.getSelectedFile().getAbsolutePath());
-                addToSelectedPDF(directory);;
+                addToSelectedPDF(directory);
+                
+                Collections.sort(selectedFiles, new SortByFileName());
 
                 int i = 0;
                 textAreas.get("selectedFiles").setText(" Selected Files:\n");
