@@ -527,7 +527,7 @@ public class UI implements ActionListener{
             }
             System.out.printf("%d files\n", selectedFiles.size());
 
-            needToCalculate = true
+            needToCalculate = true;
         }
         else if (e.getSource() == buttons.get("openFolder"))
         {
