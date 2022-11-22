@@ -15,10 +15,9 @@ import org.apache.pdfbox.text.PDFTextStripper;
 
 public class Checker {
 
-    public HashMap<String, Integer> getFrequencyMapPDF(File file)
+    public String readPDFDocument(File file)
     {
         System.out.println("Reading " + file.getName());
-        HashMap<String, Integer> toReturn = new HashMap<String, Integer>();
         PDDocument document = new PDDocument();
         try {
             document = Loader.loadPDF(file);
@@ -40,6 +39,13 @@ public class Checker {
             return null;
         }
 
+        return pageText;
+    }
+
+    public HashMap<String, Integer> getFrequencyMapPDF(String pageText)
+    {
+        HashMap<String, Integer> toReturn = new HashMap<String, Integer>();
+
         Scanner scanner = new Scanner(pageText);
 
         while (scanner.hasNext())
@@ -57,13 +63,6 @@ public class Checker {
 
         scanner.close();
 
-        try {
-            document.close();
-        } catch (IOException e) {
-            System.out.println("Could not close PDDocument object!");
-            e.printStackTrace();
-        }
-
         /*
         Set<String> words = toReturn.keySet();
         for (String string : words) {
@@ -80,7 +79,8 @@ public class Checker {
         HashMap<String, Integer> toReturn[] = new HashMap[files.size()];
         for (int i = 0; i < files.size(); i++)
         {
-            toReturn[i] = getFrequencyMapPDF(files.get(i));
+            String pageText = readPDFDocument(files.get(i));
+            toReturn[i] = getFrequencyMapPDF(pageText);
         }
         
         return toReturn;
@@ -158,8 +158,10 @@ public class Checker {
 
     public double getSimilarityPDF(File file1, File file2) throws IOException
     {
-        HashMap<String, Integer> wordFrequencyMap1 = getFrequencyMapPDF(file1);
-        HashMap<String, Integer> wordFrequencyMap2 = getFrequencyMapPDF(file2);
+        String pageText1 = readPDFDocument(file1);
+        String pageText2 = readPDFDocument(file2);
+        HashMap<String, Integer> wordFrequencyMap1 = getFrequencyMapPDF(pageText1);
+        HashMap<String, Integer> wordFrequencyMap2 = getFrequencyMapPDF(pageText2);
         return vectorAngle(wordFrequencyMap1, wordFrequencyMap2);
     }
 

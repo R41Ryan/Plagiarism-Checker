@@ -27,6 +27,7 @@ public class UI implements ActionListener{
 
     // Data members used information and calculations between functions
     private List<File> selectedFiles;
+    private String[] fileTexts;
     private double[][] fileSimilarities;
     private HashMap<String, Integer>[] fileWordFrequencies;
     private int numOfOverThreshold;
@@ -38,6 +39,7 @@ public class UI implements ActionListener{
                                                 // where each refers to an index in fileSimilarities
     private boolean needToCalculate;
     private List<File> filesWithImages;
+    private List<Double> characterToWordRatios;
 
     // Components that are graphically displayed
     private HashMap<String, JPanel> panels;
@@ -327,7 +329,19 @@ public class UI implements ActionListener{
         Checker checker = new Checker();
         if (needToCalculate)
         {
-            fileWordFrequencies = checker.getFrequencyMapPDF(selectedFiles);
+            fileTexts = new String[selectedFiles.size()];
+            for (int i = 0; i < selectedFiles.size(); i++)
+            {
+                fileTexts[i] = checker.readPDFDocument(selectedFiles.get(i));
+            }
+
+            HashMap<String, Integer> newWordFrequencies[] = new HashMap[selectedFiles.size()];
+            for (int i = 0; i < selectedFiles.size(); i++)
+            {
+                newWordFrequencies[i] = checker.getFrequencyMapPDF(fileTexts[i]);
+            }
+
+            fileWordFrequencies = newWordFrequencies;
         }
 
         for (int i = 0; i < selectedFiles.size(); i++)
