@@ -80,7 +80,7 @@ public class UI implements ActionListener {
         panels.put("fileSimilarity", new JPanel(new FlowLayout()));
         panels.put("overThreshold", new JPanel(new FlowLayout()));
         panels.put("withImages", new JPanel(new FlowLayout()));
-        panels.put("loading", new JPanel(new GridLayout(0, 1)));
+        panels.put("loading", new JPanel(new FlowLayout()));
 
         // Initialize Buttons
         // *******************************************************************************
@@ -136,6 +136,11 @@ public class UI implements ActionListener {
         textAreas.get("withImages").setEditable(false);
         textAreas.get("withImages").setLineWrap(true);
 
+        // text areas for loading screen
+        textAreas.put("loading", new JTextArea(25, 50));
+        textAreas.get("loading").setEditable(false);
+        textAreas.get("loading").setLineWrap(true);
+
         // Initialize textFields
         // ********************************************************************************
 
@@ -166,6 +171,16 @@ public class UI implements ActionListener {
         scrollPanes.put("withImages", new JScrollPane(textAreas.get("withImages")));
         scrollPanes.get("withImages").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
+        // scroll pane for loading screen
+        scrollPanes.put("loading", new JScrollPane(textAreas.get("loading")));
+        scrollPanes.get("loading").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        scrollPanes.get("loading").getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener() {
+            @Override
+            public void adjustmentValueChanged(AdjustmentEvent e) {
+                e.getAdjustable().setValue(e.getAdjustable().getMaximum());
+            }
+        });
+
         // Initialize Labels
         // ***************************************************************************************************
 
@@ -176,6 +191,7 @@ public class UI implements ActionListener {
         // Initialize progressBars
         // *********************************************************************************************
         progressBars.put("loading", new JProgressBar());
+        progressBars.get("loading").setStringPainted(true);
 
         loadMainPage();
         isInFileSelection = false;
@@ -331,10 +347,15 @@ public class UI implements ActionListener {
     // while reading the files
     void loadLoadingPanel() {
         panels.get("loading").removeAll();
+        
         progressBars.get("loading").setMaximum(selectedFiles.size());
         progressBars.get("loading").setIndeterminate(false);
         progressBars.get("loading").setValue(0);
         panels.get("loading").add(progressBars.get("loading"));
+        
+        textAreas.get("loading").setText("");
+        panels.get("loading").add(scrollPanes.get("loading"));
+
         frame.setContentPane(panels.get("loading"));
     }
 
@@ -344,14 +365,15 @@ public class UI implements ActionListener {
         Checker checker = new Checker();
         if (needToCalculate) {
             fileSimilarities = new double[selectedFiles.size()][selectedFiles.size()];
-            System.out.println("Reading files.");
+            textAreas.get("loading").append(String.format("Reading %d files:\n\n", selectedFiles.size()));
             fileTexts = new String[selectedFiles.size()];
             for (int i = 0; i < selectedFiles.size(); i++) {
+                textAreas.get("loading").append(String.format("Reading %s\n", selectedFiles.get(i).getName()));
                 fileTexts[i] = checker.readPDFDocument(selectedFiles.get(i));
                 progressBars.get("loading").setValue(i);
             }
 
-            System.out.println("Getting Word Frequency Maps.");
+            textAreas.get("loading").append("\nGetting Word Frequency Maps.\n");
             progressBars.get("loading").setIndeterminate(true);
 
             HashMap<String, Integer> newWordFrequencies[] = new HashMap[selectedFiles.size()];
@@ -361,7 +383,7 @@ public class UI implements ActionListener {
 
             fileWordFrequencies = newWordFrequencies;
 
-            System.out.println("Calculating Similarities.");
+            textAreas.get("loading").append("Calculating Similarities\n");
 
             for (int i = 0; i < selectedFiles.size(); i++) {
                 for (int j = 0; j < selectedFiles.size(); j++) {
@@ -371,9 +393,9 @@ public class UI implements ActionListener {
         }
 
         if (usingThreshold) {
-            System.out.println("Finding files similarities over threshold");
+            textAreas.get("loading").append("Finding file similarities over threshold.\n");
             fillOverThresholdSimilarities();
-            System.out.println("Sorting files similarities over threshold");
+            textAreas.get("loading").append("Sorting file similarities over threshold.\n");
             sortOverThresholdSimilarities();
         }
     }
@@ -489,7 +511,7 @@ public class UI implements ActionListener {
         if (selectedFiles.size() > 1) {
             calculateSimilarities();
             try {
-                System.out.println("Checking for images.");
+                textAreas.get("loading").append("Checking for images.\n");
                 checkForImages();
             } catch (IOException e1) {
                 System.out.printf("Error while checking images\n");
