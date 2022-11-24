@@ -77,7 +77,7 @@ public class UI implements ActionListener {
         panels.put("mainPage", new JPanel(new GridBagLayout()));
         panels.put("fileSelectionInner", new JPanel(new GridLayout(0, 2)));
         panels.put("fileSelection", new JPanel(new GridBagLayout()));
-        panels.put("fileSimilarity", new JPanel(new FlowLayout()));
+        panels.put("fileSimilarity", new JPanel(new GridBagLayout()));
         panels.put("overThreshold", new JPanel(new FlowLayout()));
         panels.put("withImages", new JPanel(new FlowLayout()));
         panels.put("loading", new JPanel(new FlowLayout()));
@@ -119,22 +119,22 @@ public class UI implements ActionListener {
         // text areas for mainPage
         textAreas.put("selectedFiles", new JTextArea(25, 50));
         textAreas.get("selectedFiles").setEditable(false);
-        textAreas.get("selectedFiles").setLineWrap(true);
+        textAreas.get("selectedFiles").setLineWrap(false);
 
         // text areas for file similarity page
-        textAreas.put("fileSimilarity", new JTextArea(25, 50));
+        textAreas.put("fileSimilarity", new JTextArea(25, 100));
         textAreas.get("fileSimilarity").setEditable(false);
-        textAreas.get("fileSimilarity").setLineWrap(true);
+        textAreas.get("fileSimilarity").setLineWrap(false);
 
         // text areas for over threshold panel
         textAreas.put("overThreshold", new JTextArea(25, 50));
         textAreas.get("overThreshold").setEditable(false);
-        textAreas.get("overThreshold").setLineWrap(true);
+        textAreas.get("overThreshold").setLineWrap(false);
 
         // text areas for with images panel
         textAreas.put("withImages", new JTextArea(25, 50));
         textAreas.get("withImages").setEditable(false);
-        textAreas.get("withImages").setLineWrap(true);
+        textAreas.get("withImages").setLineWrap(false);
 
         // text areas for loading screen
         textAreas.put("loading", new JTextArea(25, 50));
@@ -153,6 +153,7 @@ public class UI implements ActionListener {
         // scroll pane for selected files
         scrollPanes.put("selectedFiles", new JScrollPane(textAreas.get("selectedFiles")));
         scrollPanes.get("selectedFiles").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPanes.get("selectedFiles").setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         // scroll pane for file selection page
         scrollPanes.put("fileSelection", new JScrollPane(panels.get("fileSelectionInner")));
@@ -161,15 +162,18 @@ public class UI implements ActionListener {
 
         // scroll pane for file similarity page
         scrollPanes.put("fileSimilarity", new JScrollPane(textAreas.get("fileSimilarity")));
-        scrollPanes.get("fileSimilarity").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPanes.get("fileSimilarity").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPanes.get("fileSimilarity").setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 
         // scroll pane for over threshold page
         scrollPanes.put("overThreshold", new JScrollPane(textAreas.get("overThreshold")));
         scrollPanes.get("overThreshold").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPanes.get("overThreshold").setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         // scroll pane for with images page
         scrollPanes.put("withImages", new JScrollPane(textAreas.get("withImages")));
         scrollPanes.get("withImages").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPanes.get("withImages").setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         // scroll pane for loading screen
         scrollPanes.put("loading", new JScrollPane(textAreas.get("loading")));
@@ -183,6 +187,9 @@ public class UI implements ActionListener {
 
         // Initialize Labels
         // ***************************************************************************************************
+
+        // Labels for file similarity
+        labels.put("fileSimilarity", new JLabel());
 
         // Initialize checkboxes
         // ***********************************************************************************************
@@ -295,20 +302,44 @@ public class UI implements ActionListener {
     // Load the file similarity page for a specific file as indicated by the index
     void loadFileSimilarity(int i) {
         panels.get("fileSimilarity").removeAll();
+
         textAreas.get("fileSimilarity").setText("");
         for (int j = 0; j < selectedFiles.size(); j++) {
-            String toPrint = "Similarity with " + selectedFiles.get(j).getName() + ":\n"
+            String toPrint = "";
+            if (i != j)
+            {
+                toPrint = "Similarity with " + selectedFiles.get(j).getName() + ":\n"
+                    + "Path: " + selectedFiles.get(j).getAbsolutePath() + "\n"
                     + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
+            }
             if (usingThreshold) {
                 if (fileSimilarities[i][j] >= thresholdValue && i != j) {
                     toPrint = "*** Similarity with " + selectedFiles.get(j).getName() + ": ***\n"
+                            + "Path: " + selectedFiles.get(j).getAbsolutePath() + "\n"
                             + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
                 }
             }
             textAreas.get("fileSimilarity").append(toPrint);
         }
-        panels.get("fileSimilarity").add(buttons.get("fileSimilarityBack"));
-        panels.get("fileSimilarity").add(scrollPanes.get("fileSimilarity"));
+        labels.get("fileSimilarity").setText("Path: " + selectedFiles.get(i));
+
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.gridx = 0;
+        c.gridy = 0;
+        c.ipadx = 10;
+        panels.get("fileSimilarity").add(buttons.get("fileSimilarityBack"), c);
+
+        c.gridx = 1;
+        c.gridy = 0;
+        panels.get("fileSimilarity").add(labels.get("fileSimilarity"), c);
+
+        c.gridx = 0;
+        c.gridy = 1;
+        c.gridwidth = 2;
+        panels.get("fileSimilarity").add(scrollPanes.get("fileSimilarity"), c);
+        textAreas.get("fileSimilarity").setSelectionStart(0);
+        textAreas.get("fileSimilarity").setSelectionEnd(0);
         frame.setContentPane(panels.get("fileSimilarity"));
     }
 
@@ -322,12 +353,16 @@ public class UI implements ActionListener {
             File file1 = selectedFiles.get(overThresholdSimilarities[i][0]);
             File file2 = selectedFiles.get(overThresholdSimilarities[i][1]);
             textAreas.get("overThreshold").append(file1.getName() + " vs. " + file2.getName()
+                    + "\n" + file1.getName() + " path: " + file1.getAbsolutePath()
+                    + "\n" + file2.getName() + " path: " + file2.getAbsolutePath()
                     + "\n"
                     + String.format("%.3f",
                             fileSimilarities[overThresholdSimilarities[i][0]][overThresholdSimilarities[i][1]])
                     + "\n\n");
         }
         panels.get("overThreshold").add(scrollPanes.get("overThreshold"));
+        textAreas.get("overThreshold").setSelectionStart(0);
+        textAreas.get("overThreshold").setSelectionEnd(0);
         frame.setContentPane(panels.get("overThreshold"));
     }
 
@@ -337,9 +372,12 @@ public class UI implements ActionListener {
         panels.get("withImages").add(buttons.get("withImagesBack"));
         textAreas.get("withImages").setText("");
         for (int i = 0; i < filesWithImages.size(); i++) {
-            textAreas.get("withImages").append(filesWithImages.get(i).getName() + "\n\n");
+            textAreas.get("withImages").append(filesWithImages.get(i).getName() + "\n"
+            + "Path: " + filesWithImages.get(i).getAbsolutePath() + "\n\n");
         }
         panels.get("withImages").add(scrollPanes.get("withImages"));
+        textAreas.get("withImages").setSelectionStart(0);
+        textAreas.get("withImages").setSelectionEnd(0);
         frame.setContentPane(panels.get("withImages"));
     }
 
@@ -562,12 +600,16 @@ public class UI implements ActionListener {
                 Collections.sort(selectedFiles, new SortByFileName());
 
                 int i = 0;
-                textAreas.get("selectedFiles").setText(" Selected Files:\n");
+                textAreas.get("selectedFiles").setText(" Selected " + selectedFiles.size() + " Files:\n");
 
                 while (i < selectedFiles.size()) {
-                    textAreas.get("selectedFiles").append("\n     " + selectedFiles.get(i).getName());
+                    textAreas.get("selectedFiles").append("\n   * " + selectedFiles.get(i).getName()
+                    + "\n          Path: " + selectedFiles.get(i).getPath() + "\n");
                     i++;
                 }
+
+                textAreas.get("selectedFiles").setSelectionStart(0);
+                textAreas.get("selectedFiles").setSelectionEnd(0);
 
                 needToCalculate = true;
             }
@@ -591,12 +633,16 @@ public class UI implements ActionListener {
                 Collections.sort(selectedFiles, new SortByFileName());
 
                 int i = 0;
-                textAreas.get("selectedFiles").setText(" Selected Files:\n");
+                textAreas.get("selectedFiles").setText(" Selected " + selectedFiles.size() + " Files:\n");
 
                 while (i < selectedFiles.size()) {
-                    textAreas.get("selectedFiles").append("\n     " + selectedFiles.get(i).getName());
+                    textAreas.get("selectedFiles").append("\n   * " + selectedFiles.get(i).getName()
+                    + "\n          Path: " + selectedFiles.get(i).getPath() + "\n");
                     i++;
                 }
+
+                textAreas.get("selectedFiles").setSelectionStart(0);
+                textAreas.get("selectedFiles").setSelectionEnd(0);
             }
             System.out.printf("%d files\n", selectedFiles.size());
 
@@ -623,36 +669,6 @@ public class UI implements ActionListener {
             }
 
             isReadingFiles = true;
-            /*
-             * usingThreshold = checkboxes.get("thresholdValue").isSelected();
-             * if (usingThreshold)
-             * {
-             * try {
-             * thresholdValue = Float.valueOf(textFields.get("thresholdField").getText());
-             * }
-             * catch (NumberFormatException n)
-             * {
-             * JOptionPane.showMessageDialog(frame, "Enter a valid number for threshold",
-             * "ERROR", JOptionPane.ERROR_MESSAGE);
-             * return;
-             * }
-             * }
-             * 
-             * if (selectedFiles.size() > 1)
-             * {
-             * calculateSimilarities();
-             * try {
-             * checkForImages();
-             * } catch (IOException e1) {
-             * System.out.printf("Error while checking images\n");
-             * e1.printStackTrace();
-             * }
-             * createFileButtons();
-             * needToCalculate = false;
-             * loadFileSelectionPage();
-             * isInFileSelection = true;
-             * }
-             */
         } else if (e.getSource() == buttons.get("fileSelectionBack")) // user clicked back button on file selection
                                                                       // screen
         {
