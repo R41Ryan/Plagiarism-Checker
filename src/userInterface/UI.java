@@ -57,6 +57,7 @@ public class UI implements ActionListener {
         // Initialize information data members
         selectedFiles = new ArrayList<File>();
         filesWithImages = new ArrayList<File>();
+        characterToWordRatios = new ArrayList<Double>();
 
         frame = new JFrame("Plagiarism Checker");
         frame.setVisible(true);
@@ -81,6 +82,7 @@ public class UI implements ActionListener {
         panels.put("overThreshold", new JPanel(new FlowLayout()));
         panels.put("withImages", new JPanel(new FlowLayout()));
         panels.put("loading", new JPanel(new FlowLayout()));
+        panels.put("fileRatios", new JPanel(new FlowLayout()));
 
         // Initialize Buttons
         // *******************************************************************************
@@ -100,6 +102,8 @@ public class UI implements ActionListener {
         buttons.get("filesOverThreshold").addActionListener(this);
         buttons.put("withImages", new JButton("Files with images"));
         buttons.get("withImages").addActionListener(this);
+        buttons.put("fileRatios", new JButton("Character to Word Ratios"));
+        buttons.get("fileRatios").addActionListener(this);
 
         // buttons for files over threshold page
         buttons.put("overThresholdBack", new JButton("Back"));
@@ -112,6 +116,10 @@ public class UI implements ActionListener {
         // buttons for files with images page
         buttons.put("withImagesBack", new JButton("Back"));
         buttons.get("withImagesBack").addActionListener(this);
+
+        // buttons for file ratios
+        buttons.put("fileRatiosBack", new JButton("Back"));
+        buttons.get("fileRatiosBack").addActionListener(this);
 
         // Initialize textAreas
         // *****************************************************************************
@@ -140,6 +148,10 @@ public class UI implements ActionListener {
         textAreas.put("loading", new JTextArea(25, 50));
         textAreas.get("loading").setEditable(false);
         textAreas.get("loading").setLineWrap(true);
+
+        // text areas for file ratios panel
+        textAreas.put("fileRatios", new JTextArea(25, 50));
+        textAreas.get("fileRatios").setEditable(false);
 
         // Initialize textFields
         // ********************************************************************************
@@ -184,6 +196,11 @@ public class UI implements ActionListener {
                 e.getAdjustable().setValue(e.getAdjustable().getMaximum());
             }
         });
+
+        // scroll pane for file ratio page
+        scrollPanes.put("fileRatios", new JScrollPane(textAreas.get("fileRatios")));
+        scrollPanes.get("fileRatios").setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPanes.get("fileRatios").setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         // Initialize Labels
         // ***************************************************************************************************
@@ -287,10 +304,16 @@ public class UI implements ActionListener {
         }
         buttons.get("withImages").setText(withImagesString);
 
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 3;
+        c.gridy = 0;
+        c.gridwidth = 1;
+        panels.get("fileSelection").add(buttons.get("fileRatios"), c);
+
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 1;
-        c.gridwidth = 3;
+        c.gridwidth = 4;
         for (int i = 0; i < fileButtons.length; i++) {
             panels.get("fileSelectionInner").add(fileButtons[i]);
         }
@@ -397,11 +420,37 @@ public class UI implements ActionListener {
         frame.setContentPane(panels.get("loading"));
     }
 
+    // loads the file ratios panel that shows the character to word ratio of each file
+    void loadFileRatios() {
+        panels.get("fileRatios").removeAll();
+
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.gridx = 0;
+        c.gridy = 0;
+        panels.get("fileRatios").add(buttons.get("fileRatiosBack"), c);
+
+        textAreas.get("fileRatios").setText("");
+        for (int i = 0; i < selectedFiles.size(); i++) {
+            textAreas.get("fileRatios").append(selectedFiles.get(i).getName()
+                + "\n" + selectedFiles.get(i). getAbsolutePath()
+                + "\n" + String.format("%.2f", characterToWordRatios.get(i)) + "\n\n");
+        }
+        c.gridx = 1;
+        c.gridy = 0;
+        panels.get("fileRatios").add(scrollPanes.get("fileRatios"), c);
+        textAreas.get("fileRatios").setSelectionStart(0);
+        textAreas.get("fileRatios").setSelectionEnd(0);
+
+        frame.setContentPane(panels.get("fileRatios"));
+    }
+
     // Calculate the similarities for all files
     void calculateSimilarities() {
         numOfOverThreshold = 0;
         Checker checker = new Checker();
         if (needToCalculate) {
+            characterToWordRatios.clear();
             fileSimilarities = new double[selectedFiles.size()][selectedFiles.size()];
             textAreas.get("loading").append(String.format("Reading %d files:\n\n", selectedFiles.size()));
             fileTexts = new String[selectedFiles.size()];
@@ -426,6 +475,26 @@ public class UI implements ActionListener {
             for (int i = 0; i < selectedFiles.size(); i++) {
                 for (int j = 0; j < selectedFiles.size(); j++) {
                     fileSimilarities[i][j] = checker.getSimilarity(fileWordFrequencies[i], fileWordFrequencies[j]);
+                }
+            }
+
+            textAreas.get("loading").append("Calculating character to word ratios\n");
+
+            for (int i = 0; i < selectedFiles.size(); i++) {
+                Scanner scanner = new Scanner(fileTexts[i]);
+                int count = 0;
+                while (scanner.hasNext()) {
+                    count++;
+                    String word = scanner.next();
+                    if (selectedFiles.get(i).getName().compareTo("David_Pichach_ENGG513_Case_Report.pdf") == 0) {
+                        System.out.printf("Word: %s\n", word);
+                    }
+                }
+                scanner.close();
+                characterToWordRatios.add((double)fileTexts[i].length() / count);
+
+                if (selectedFiles.get(i).getName().compareTo("David_Pichach_ENGG513_Case_Report.pdf") == 0) {
+                    System.out.println(fileTexts[i]);
                 }
             }
         }
@@ -690,6 +759,12 @@ public class UI implements ActionListener {
             loadWithImagesPanel();
             isInFileSelection = false;
         } else if (e.getSource() == buttons.get("withImagesBack")) {
+            loadFileSelectionPage();
+            isInFileSelection = true;
+        } else if (e.getSource() == buttons.get("fileRatios")) {
+            loadFileRatios();
+            isInFileSelection = false;
+        } else if (e.getSource() == buttons.get("fileRatiosBack")) {
             loadFileSelectionPage();
             isInFileSelection = true;
         }
