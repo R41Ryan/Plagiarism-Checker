@@ -15,6 +15,32 @@ import org.apache.pdfbox.text.PDFTextStripper;
 
 public class Checker {
 
+    public int getPDFPageCount(File file)
+    {
+        int toReturn = 0;
+
+        PDDocument doc = new PDDocument();
+        try {
+            doc = Loader.loadPDF(file);
+        } catch (IOException e)
+        {
+            System.out.println("Unable to load pdf file!");
+            e.printStackTrace();
+            return -1;
+        }
+
+        toReturn = doc.getNumberOfPages();
+
+        try {
+            doc.close();
+        } catch (IOException e) {
+            System.out.println("Unable to close pdf file");
+            e.printStackTrace();
+        }
+
+        return toReturn;
+    }
+
     public String readPDFDocument(File file)
     {
         System.out.println("Reading " + file.getName());
@@ -37,6 +63,13 @@ public class Checker {
             System.out.println("Unable to get text from pdf!");
             e1.printStackTrace();
             return null;
+        }
+
+        try {
+            document.close();
+        } catch (IOException e) {
+            System.out.println("Unable to close pdf file");
+            e.printStackTrace();
         }
 
         return pageText;

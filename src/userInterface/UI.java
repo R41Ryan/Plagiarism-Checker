@@ -21,6 +21,18 @@ class SortByFileName implements Comparator<File> {
     }
 }
 
+// Class for containing the character-to-page ratio for a given file as indicated by their index in selectedFiles
+class FileRatio {
+    public double ratio;
+    public int fileIndex;
+
+    FileRatio() {}
+    FileRatio(double r, int i) {
+        ratio = r;
+        fileIndex = i;
+    }
+}
+
 public class UI implements ActionListener {
 
     // Data members used information and calculations between functions
@@ -36,7 +48,7 @@ public class UI implements ActionListener {
                                                // where each element is itself another array of length 2,
                                                // where each refers to an index in fileSimilarities
     private List<File> filesWithImages;
-    private List<Double> characterToWordRatios;
+    private List<FileRatio> characterToPageRatios;
     private boolean needToCalculate;
     private boolean isReadingFiles;
 
@@ -57,7 +69,7 @@ public class UI implements ActionListener {
         // Initialize information data members
         selectedFiles = new ArrayList<File>();
         filesWithImages = new ArrayList<File>();
-        characterToWordRatios = new ArrayList<Double>();
+        characterToPageRatios = new ArrayList<FileRatio>();
 
         frame = new JFrame("Plagiarism Checker");
         frame.setVisible(true);
@@ -102,7 +114,7 @@ public class UI implements ActionListener {
         buttons.get("filesOverThreshold").addActionListener(this);
         buttons.put("withImages", new JButton("Files with images"));
         buttons.get("withImages").addActionListener(this);
-        buttons.put("fileRatios", new JButton("Character to Word Ratios"));
+        buttons.put("fileRatios", new JButton("Character to Page Ratios"));
         buttons.get("fileRatios").addActionListener(this);
 
         // buttons for files over threshold page
@@ -431,10 +443,10 @@ public class UI implements ActionListener {
         panels.get("fileRatios").add(buttons.get("fileRatiosBack"), c);
 
         textAreas.get("fileRatios").setText("");
-        for (int i = 0; i < selectedFiles.size(); i++) {
-            textAreas.get("fileRatios").append(selectedFiles.get(i).getName()
-                + "\n" + selectedFiles.get(i). getAbsolutePath()
-                + "\n" + String.format("%.2f", characterToWordRatios.get(i)) + "\n\n");
+        for (int i = 0; i < characterToPageRatios.size(); i++) {
+            textAreas.get("fileRatios").append(selectedFiles.get(characterToPageRatios.get(i).fileIndex).getName()
+                + "\n" + selectedFiles.get(characterToPageRatios.get(i).fileIndex).getAbsolutePath()
+                + "\n" + String.format("%.2f", characterToPageRatios.get(i).ratio) + "\n\n");
         }
         c.gridx = 1;
         c.gridy = 0;
@@ -450,7 +462,7 @@ public class UI implements ActionListener {
         numOfOverThreshold = 0;
         Checker checker = new Checker();
         if (needToCalculate) {
-            characterToWordRatios.clear();
+            characterToPageRatios.clear();
             fileSimilarities = new double[selectedFiles.size()][selectedFiles.size()];
             textAreas.get("loading").append(String.format("Reading %d files:\n\n", selectedFiles.size()));
             fileTexts = new String[selectedFiles.size()];
@@ -478,25 +490,21 @@ public class UI implements ActionListener {
                 }
             }
 
-            textAreas.get("loading").append("Calculating character to word ratios\n");
+            textAreas.get("loading").append("Calculating character to page ratios.\n");
 
             for (int i = 0; i < selectedFiles.size(); i++) {
                 Scanner scanner = new Scanner(fileTexts[i]);
-                int count = 0;
                 while (scanner.hasNext()) {
-                    count++;
-                    String word = scanner.next();
-                    if (selectedFiles.get(i).getName().compareTo("David_Pichach_ENGG513_Case_Report.pdf") == 0) {
-                        System.out.printf("Word: %s\n", word);
-                    }
+                    scanner.next();
                 }
                 scanner.close();
-                characterToWordRatios.add((double)fileTexts[i].length() / count);
-
-                if (selectedFiles.get(i).getName().compareTo("David_Pichach_ENGG513_Case_Report.pdf") == 0) {
-                    System.out.println(fileTexts[i]);
-                }
+                FileRatio newRatio = new FileRatio(fileTexts[i].length() / checker.getPDFPageCount(selectedFiles.get(i)), i);
+                characterToPageRatios.add(newRatio);
             }
+
+            textAreas.get("loading").append("Sorting ratios.\n");
+
+            sortRatios();
         }
 
         if (usingThreshold) {
@@ -568,6 +576,35 @@ public class UI implements ActionListener {
                             - 1][0]][overThresholdSimilarities[currentIndex - 1][1]];
                     if (prevSimilarity < similarityValue) {
                         switchOverThresholdSimilarities(currentIndex - 1, currentIndex);
+                        currentIndex--;
+                    } else {
+                        isGreaterThanPrev = false;
+                    }
+                }
+            }
+        }
+    }
+
+    // switch the two fileRatio objects in the characterToPageRatio List, the indices of which are indicated by the parameters
+    void switchRatio(int a, int b) {
+        if (a < characterToPageRatios.size() && b < characterToPageRatios.size()) {
+            FileRatio temp = characterToPageRatios.get(a);
+            characterToPageRatios.set(a, characterToPageRatios.get(b));
+            characterToPageRatios.set(b, temp);
+        }
+    }
+
+    // Sort the characterToPageRatios list such that the ratios are in descending order.
+    void sortRatios() {
+        if (characterToPageRatios.size() > 0) {
+            for (int i = 1; i < characterToPageRatios.size(); i++) {
+                int currentIndex = i;
+                double currentRatio = characterToPageRatios.get(i).ratio;
+                boolean isGreaterThanPrev = true;
+                while (currentIndex > 0 && isGreaterThanPrev) {
+                    double prevRatio = characterToPageRatios.get(currentIndex - 1).ratio;
+                    if (prevRatio < currentRatio) {
+                        switchRatio(currentIndex, currentIndex - 1);
                         currentIndex--;
                     } else {
                         isGreaterThanPrev = false;
