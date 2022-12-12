@@ -51,6 +51,8 @@ public class UI implements ActionListener {
     private List<FileRatio> characterToPageRatios;
     private boolean needToCalculate;
     private boolean isReadingFiles;
+    private boolean helpMode;   // When true, then when pressing any buttons, it will open a dialog box
+                                // describing its function, rather than performing the function itself.
 
     // Components that are graphically displayed
     private HashMap<String, JPanel> panels;
@@ -132,6 +134,10 @@ public class UI implements ActionListener {
         // buttons for file ratios
         buttons.put("fileRatiosBack", new JButton("Back"));
         buttons.get("fileRatiosBack").addActionListener(this);
+
+        // Common buttons used in multiple panels
+        buttons.put("helpToggle", new JButton("Help Mode: Off"));
+        buttons.get("helpToggle").addActionListener(this);
 
         // Initialize textAreas
         // *****************************************************************************
@@ -233,6 +239,7 @@ public class UI implements ActionListener {
         isInFileSelection = false;
         needToCalculate = true;
         isReadingFiles = false;
+        helpMode = false;
         frame.pack();
         frame.validate();
     }
@@ -261,14 +268,15 @@ public class UI implements ActionListener {
         c.gridy = 2;
         c.gridwidth = 2;
         panels.get("mainPage").add(buttons.get("checkPlagiarism"), c);
-        c.gridwidth = 1;
 
         c.gridx = 0;
         c.gridy = 1;
+        c.gridwidth = 1;
         panels.get("mainPage").add(checkboxes.get("thresholdValue"), c);
 
         c.gridx = 1;
         c.gridy = 1;
+        c.gridwidth = 1;
         panels.get("mainPage").add(textFields.get("thresholdField"), c);
 
         if (selectedFiles.size() <= 0) {
@@ -278,6 +286,12 @@ public class UI implements ActionListener {
         c.gridy = 3;
         c.gridwidth = 2;
         panels.get("mainPage").add(scrollPanes.get("selectedFiles"), c);
+
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 4;
+        c.gridwidth = 2;
+        panels.get("mainPage").add(buttons.get("helpToggle"), c);
 
         frame.setContentPane(panels.get("mainPage"));
     }
@@ -331,6 +345,12 @@ public class UI implements ActionListener {
         }
         panels.get("fileSelection").add(scrollPanes.get("fileSelection"), c);
 
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
+        c.gridy = 2;
+        c.gridwidth = 4;
+        panels.get("fileSelection").add(buttons.get("helpToggle"), c);
+
         frame.setContentPane(panels.get("fileSelection"));
     }
 
@@ -361,17 +381,19 @@ public class UI implements ActionListener {
         GridBagConstraints c = new GridBagConstraints();
 
         c.gridx = 0;
-        c.gridy = 0;
+        c.gridy = 1;
+        c.gridwidth = 1;
         c.ipadx = 10;
         panels.get("fileSimilarity").add(buttons.get("fileSimilarityBack"), c);
 
-        c.gridx = 1;
+        c.gridx = 0;
         c.gridy = 0;
+        c.gridwidth = 2;
         panels.get("fileSimilarity").add(labels.get("fileSimilarity"), c);
 
-        c.gridx = 0;
+        c.gridx = 1;
         c.gridy = 1;
-        c.gridwidth = 2;
+        c.gridwidth = 1;
         panels.get("fileSimilarity").add(scrollPanes.get("fileSimilarity"), c);
         textAreas.get("fileSimilarity").setSelectionStart(0);
         textAreas.get("fileSimilarity").setSelectionEnd(0);
@@ -685,6 +707,12 @@ public class UI implements ActionListener {
 
         if (e.getSource() == buttons.get("openFile")) // User pressed "Open File(s) button on main page"
         {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This is for selecting individual pdf files to compare.", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
             JFileChooser fileChooser = new JFileChooser(Path.of("").toAbsolutePath().toString(),
                     FileSystemView.getFileSystemView());
 
@@ -723,6 +751,12 @@ public class UI implements ActionListener {
 
             needToCalculate = true;
         } else if (e.getSource() == buttons.get("openFolder")) {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This is for selecting directories that contain the pdf files to compare.", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
             JFileChooser fileChooser = new JFileChooser(Path.of("").toAbsolutePath().toString(),
                     FileSystemView.getFileSystemView());
 
@@ -755,6 +789,12 @@ public class UI implements ActionListener {
             needToCalculate = true;
         } else if (e.getSource() == buttons.get("checkPlagiarism")) // User pressed check plagiarism button
         {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This initiates the reading of pdf files and calculations.", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
             usingThreshold = checkboxes.get("thresholdValue").isSelected();
             if (usingThreshold) {
                 try {
@@ -778,32 +818,84 @@ public class UI implements ActionListener {
         } else if (e.getSource() == buttons.get("fileSelectionBack")) // user clicked back button on file selection
                                                                       // screen
         {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This returns to the main menu.", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             loadMainPage();
             isInFileSelection = false;
         } else if (e.getSource() == buttons.get("filesOverThreshold")) {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "If you had checked the \"Plagiarism Threshold\" box in the main menu, this will lists all the pdf files with a similarity score above the threshold value you inputted.", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             if (usingThreshold) {
                 loadOverThresholdPanel();
             }
         } else if (e.getSource() == buttons.get("overThresholdBack")) {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This returns to the file selection screen", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             loadFileSelectionPage();
         } else if (fileButtonSelected >= 0) {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "These buttons, listed alphabetically in descending order, will open a similarity profile for the file corresponding to the name shown on the button", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             loadFileSimilarity(fileButtonSelected);
             isInFileSelection = false;
         } else if (e.getSource() == buttons.get("fileSimilarityBack")) {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This returns to the file selection screen", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             loadFileSelectionPage();
             isInFileSelection = true;
         } else if (e.getSource() == buttons.get("withImages")) {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This lists the pdf files that contain images in alphabetical order.", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             loadWithImagesPanel();
             isInFileSelection = false;
         } else if (e.getSource() == buttons.get("withImagesBack")) {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This returns to the file selection screen", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             loadFileSelectionPage();
             isInFileSelection = true;
         } else if (e.getSource() == buttons.get("fileRatios")) {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This lists the character-to-page ratio for all pdf files in descending order", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             loadFileRatios();
             isInFileSelection = false;
         } else if (e.getSource() == buttons.get("fileRatiosBack")) {
+            if (helpMode) {
+                JOptionPane.showMessageDialog(frame, "This returns to the file selection screen", 
+                "HELP", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             loadFileSelectionPage();
             isInFileSelection = true;
+        } else if (e.getSource() == buttons.get("helpToggle")) {
+            helpMode = helpMode == false;
+            if (helpMode) {
+                buttons.get("helpToggle").setText("Help Mode: On");
+            } else {
+                buttons.get("helpToggle").setText("Help Mode: Off");
+            }
         }
 
         if (isReadingFiles) {
