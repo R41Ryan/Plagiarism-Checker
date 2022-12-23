@@ -10,6 +10,8 @@ import java.util.*;
 import java.util.List;
 import java.io.*;
 import java.nio.file.Path;
+import java.sql.Struct;
+import java.util.regex.*;
 
 import plagiarismAlgorithm.*;
 
@@ -33,16 +35,41 @@ class FileRatio {
     }
 }
 
+// Class for containing the multiple files with similar IDs (For use with files downloaded from Desire2Learn)
+class FileId {
+    public String id; // The id that the files share
+    public List<Integer> indices; // the indices in "selectedFiles" that share the id above
+
+    FileId() {}
+    FileId(String i, int index) {
+        id = i;
+        indices = new ArrayList<Integer>();
+        indices.add(index);
+    }
+
+    void add(int index) {
+        indices.add(index);
+    }
+
+    String getId() {
+        return id;
+    }
+}
+
 public class UI implements ActionListener {
 
     // Data members used information and calculations between functions
     private List<File> selectedFiles;
+    private List<Integer> ignoredFiles; // This is a list of indices of selected files which are to be ignored
+                                        // This is for files downloaded from D2L, where each submission is placed
+                                        // in a unique folder.
     private String[] fileTexts;
     private double[][] fileSimilarities;
     private HashMap<String, Integer>[] fileWordFrequencies;
     private int numOfOverThreshold;
     private boolean isInFileSelection;
     private boolean usingThreshold;
+    private boolean usingD2LDuplicates;
     private float thresholdValue;
     private int[][] overThresholdSimilarities; // It is an array of length numOfOverThreshold,
                                                // where each element is itself another array of length 2,
@@ -70,6 +97,7 @@ public class UI implements ActionListener {
     public UI() {
         // Initialize information data members
         selectedFiles = new ArrayList<File>();
+        ignoredFiles = new ArrayList<Integer>();
         filesWithImages = new ArrayList<File>();
         characterToPageRatios = new ArrayList<FileRatio>();
 
@@ -229,6 +257,7 @@ public class UI implements ActionListener {
         // Initialize checkboxes
         // ***********************************************************************************************
         checkboxes.put("thresholdValue", new JCheckBox("Plagiarism Threshold:"));
+        checkboxes.put("duplicates", new JCheckBox("Remove Duplicates (Desire2Learn)"));
 
         // Initialize progressBars
         // *********************************************************************************************
@@ -254,19 +283,24 @@ public class UI implements ActionListener {
         GridBagConstraints c = new GridBagConstraints();
 
         c.fill = GridBagConstraints.HORIZONTAL;
-        c.gridx = 0;
+        c.gridx = 1;
         c.gridy = 0;
         panels.get("mainPage").add(buttons.get("openFile"), c);
 
         c.fill = GridBagConstraints.HORIZONTAL;
-        c.gridx = 1;
+        c.gridx = 2;
         c.gridy = 0;
         panels.get("mainPage").add(buttons.get("openFolder"), c);
 
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 0;
+        c.gridy = 0;
+        panels.get("mainPage").add(checkboxes.get("duplicates"), c);
+
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;
         c.gridy = 2;
-        c.gridwidth = 2;
+        c.gridwidth = 3;
         panels.get("mainPage").add(buttons.get("checkPlagiarism"), c);
 
         c.gridx = 0;
@@ -276,7 +310,7 @@ public class UI implements ActionListener {
 
         c.gridx = 1;
         c.gridy = 1;
-        c.gridwidth = 1;
+        c.gridwidth = 2;
         panels.get("mainPage").add(textFields.get("thresholdField"), c);
 
         if (selectedFiles.size() <= 0) {
@@ -284,13 +318,13 @@ public class UI implements ActionListener {
         }
         c.gridx = 0;
         c.gridy = 3;
-        c.gridwidth = 2;
+        c.gridwidth = 3;
         panels.get("mainPage").add(scrollPanes.get("selectedFiles"), c);
 
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 0;
         c.gridy = 4;
-        c.gridwidth = 2;
+        c.gridwidth = 3;
         panels.get("mainPage").add(buttons.get("helpToggle"), c);
 
         frame.setContentPane(panels.get("mainPage"));
@@ -324,7 +358,7 @@ public class UI implements ActionListener {
         c.gridy = 0;
         c.gridwidth = 1;
         panels.get("fileSelection").add(buttons.get("withImages"), c);
-        String withImagesString = "Files over Threshold (None)";
+        String withImagesString = "Files with images (None)";
         if (filesWithImages.size() > 0) {
             withImagesString = "Files with images (" + filesWithImages.size() + ")";
         }
@@ -360,21 +394,23 @@ public class UI implements ActionListener {
 
         textAreas.get("fileSimilarity").setText("");
         for (int j = 0; j < selectedFiles.size(); j++) {
-            String toPrint = "";
-            if (i != j)
-            {
-                toPrint = "Similarity with " + selectedFiles.get(j).getName() + ":\n"
-                    + "Path: " + selectedFiles.get(j).getAbsolutePath() + "\n"
-                    + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
-            }
-            if (usingThreshold) {
-                if (fileSimilarities[i][j] >= thresholdValue && i != j) {
-                    toPrint = "*** Similarity with " + selectedFiles.get(j).getName() + ": ***\n"
-                            + "Path: " + selectedFiles.get(j).getAbsolutePath() + "\n"
-                            + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
+            if (!ignoredFiles.contains(j)) {
+                String toPrint = "";
+                if (i != j)
+                {
+                    toPrint = "Similarity with " + selectedFiles.get(j).getName() + ":\n"
+                        + "Path: " + selectedFiles.get(j).getAbsolutePath() + "\n"
+                        + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
                 }
+                if (usingThreshold) {
+                    if (fileSimilarities[i][j] >= thresholdValue && i != j) {
+                        toPrint = "*** Similarity with " + selectedFiles.get(j).getName() + ": ***\n"
+                                + "Path: " + selectedFiles.get(j).getAbsolutePath() + "\n"
+                                + String.format("%.3f", fileSimilarities[i][j]) + "\n\n";
+                    }
+                }
+                textAreas.get("fileSimilarity").append(toPrint);
             }
-            textAreas.get("fileSimilarity").append(toPrint);
         }
         labels.get("fileSimilarity").setText("Path: " + selectedFiles.get(i));
 
@@ -407,15 +443,17 @@ public class UI implements ActionListener {
         panels.get("overThreshold").add(buttons.get("overThresholdBack"));
         textAreas.get("overThreshold").setText("");
         for (int i = 0; i < numOfOverThreshold; i++) {
-            File file1 = selectedFiles.get(overThresholdSimilarities[i][0]);
-            File file2 = selectedFiles.get(overThresholdSimilarities[i][1]);
-            textAreas.get("overThreshold").append(file1.getName() + " vs. " + file2.getName()
-                    + "\n" + file1.getName() + " path: " + file1.getAbsolutePath()
-                    + "\n" + file2.getName() + " path: " + file2.getAbsolutePath()
-                    + "\n"
-                    + String.format("%.3f",
-                            fileSimilarities[overThresholdSimilarities[i][0]][overThresholdSimilarities[i][1]])
-                    + "\n\n");
+            if (!ignoredFiles.contains(overThresholdSimilarities[i][0]) && !ignoredFiles.contains(overThresholdSimilarities[i][1])) {
+                File file1 = selectedFiles.get(overThresholdSimilarities[i][0]);
+                File file2 = selectedFiles.get(overThresholdSimilarities[i][1]);
+                textAreas.get("overThreshold").append(file1.getName() + " vs. " + file2.getName()
+                        + "\n" + file1.getName() + " path: " + file1.getAbsolutePath()
+                        + "\n" + file2.getName() + " path: " + file2.getAbsolutePath()
+                        + "\n"
+                        + String.format("%.3f",
+                                fileSimilarities[overThresholdSimilarities[i][0]][overThresholdSimilarities[i][1]])
+                        + "\n\n");
+            }
         }
         panels.get("overThreshold").add(scrollPanes.get("overThreshold"));
         textAreas.get("overThreshold").setSelectionStart(0);
@@ -429,8 +467,17 @@ public class UI implements ActionListener {
         panels.get("withImages").add(buttons.get("withImagesBack"));
         textAreas.get("withImages").setText("");
         for (int i = 0; i < filesWithImages.size(); i++) {
-            textAreas.get("withImages").append(filesWithImages.get(i).getName() + "\n"
-            + "Path: " + filesWithImages.get(i).getAbsolutePath() + "\n\n");
+            boolean canPrint = true;
+            for (int j = 0; j < ignoredFiles.size(); j++) {
+                int ignoredFileIndex = ignoredFiles.get(j);
+                if (selectedFiles.get(ignoredFileIndex) == filesWithImages.get(i)) {
+                    canPrint = false;
+                }
+            }
+            if (canPrint) {
+                textAreas.get("withImages").append(filesWithImages.get(i).getName() + "\n"
+                + "Path: " + filesWithImages.get(i).getAbsolutePath() + "\n\n");
+            }
         }
         panels.get("withImages").add(scrollPanes.get("withImages"));
         textAreas.get("withImages").setSelectionStart(0);
@@ -466,9 +513,11 @@ public class UI implements ActionListener {
 
         textAreas.get("fileRatios").setText("");
         for (int i = 0; i < characterToPageRatios.size(); i++) {
-            textAreas.get("fileRatios").append(selectedFiles.get(characterToPageRatios.get(i).fileIndex).getName()
-                + "\n" + selectedFiles.get(characterToPageRatios.get(i).fileIndex).getAbsolutePath()
-                + "\n" + String.format("%.2f", characterToPageRatios.get(i).ratio) + "\n\n");
+            if (!ignoredFiles.contains(characterToPageRatios.get(i).fileIndex)) {
+                textAreas.get("fileRatios").append(selectedFiles.get(characterToPageRatios.get(i).fileIndex).getName()
+                    + "\n" + selectedFiles.get(characterToPageRatios.get(i).fileIndex).getAbsolutePath()
+                    + "\n" + String.format("%.2f", characterToPageRatios.get(i).ratio) + "\n\n");
+            }
         }
         c.gridx = 1;
         c.gridy = 0;
@@ -542,9 +591,11 @@ public class UI implements ActionListener {
         if (needToCalculate) {
             fileButtons = new JButton[selectedFiles.size()];
             for (int i = 0; i < selectedFiles.size(); i++) {
-                fileButtons[i] = new JButton(selectedFiles.get(i).getName());
-                fileButtons[i].addActionListener(this);
-                fileButtons[i].setPreferredSize(new Dimension(300, 20));
+                if (!ignoredFiles.contains(i)) {
+                    fileButtons[i] = new JButton(selectedFiles.get(i).getName());
+                    fileButtons[i].addActionListener(this);
+                    fileButtons[i].setPreferredSize(new Dimension(300, 20));
+                }
             }
         }
     }
@@ -685,12 +736,83 @@ public class UI implements ActionListener {
             }
             createFileButtons();
             needToCalculate = false;
+
+            if (usingD2LDuplicates) {
+                getDuplicates();
+            }
+
             loadFileSelectionPage();
             frame.pack();
             frame.validate();
             isInFileSelection = true;
         }
         isReadingFiles = false;
+    }
+
+    // Function to go through the selected files and choose which are duplicates, using the latest submission
+    void getDuplicates() {
+        List<String> submissionIds = new ArrayList<String>();
+        Pattern pattern = Pattern.compile("[0-9]+-[0-9]+ ", Pattern.CASE_INSENSITIVE);
+        for (int i = 0; i < selectedFiles.size(); i++) {
+            Matcher matcher = pattern.matcher(selectedFiles.get(i).getAbsolutePath());
+            boolean matchFound = matcher.find();
+            if (matchFound) {
+                submissionIds.add(selectedFiles.get(i).getAbsolutePath().substring(matcher.start(), matcher.end() - 1));
+            }
+            else {
+                submissionIds.add("null");
+            }
+            // System.out.println(submissionIds.get(i));
+        }
+
+        List<FileId> duplicates = new ArrayList<FileId>();
+        List<String> repeatedIds = new ArrayList<String>();
+        for (int i = 0; i < submissionIds.size(); i++) {
+            if (repeatedIds.contains(submissionIds.get(i))) {
+                for (int j = 0; j < duplicates.size(); j++) {
+                    if (duplicates.get(j).id.compareTo(submissionIds.get(i)) == 0) {
+                        duplicates.get(j).add(i);
+                    }
+                }
+            }
+            else {
+                duplicates.add(new FileId(submissionIds.get(i), i));
+                repeatedIds.add(submissionIds.get(i));
+            }
+        }
+
+        // The following code just prints the id along with the indices in selectedFiles that use it
+        for (int i = 0; i < repeatedIds.size(); i++) {
+            System.out.println(repeatedIds.get(i));
+            FileId duplicate = null;
+            for (int j = 0; j < duplicates.size(); j++) {
+                if (duplicates.get(j).id.compareTo(repeatedIds.get(i)) == 0) {
+                    duplicate = duplicates.get(j);
+                }
+            }
+
+            if (duplicate != null) {
+                for (int j = 0; j < duplicate.indices.size(); j++) {
+                    System.out.printf("%d ", duplicate.indices.get(j));
+                }
+                System.out.println();
+            }
+        }
+
+        ignoredFiles.clear();
+        for (int i = 0; i < duplicates.size(); i++) {
+            if (duplicates.get(i).id.compareTo("null") != 0) {
+                List<Integer> currentIndices = duplicates.get(i).indices;
+                if (currentIndices.size() > 1) {
+                    ignoredFiles.add(currentIndices.get(currentIndices.size() - 1));
+                }
+            }
+        }
+
+        for (int i = 0; i < ignoredFiles.size(); i++) {
+            System.out.printf("%d ", ignoredFiles.get(i));
+        }
+        System.out.println();
     }
 
     @Override
@@ -814,6 +936,7 @@ public class UI implements ActionListener {
                 return;
             }
 
+            usingD2LDuplicates = checkboxes.get("duplicates").isSelected();
             isReadingFiles = true;
         } else if (e.getSource() == buttons.get("fileSelectionBack")) // user clicked back button on file selection
                                                                       // screen
