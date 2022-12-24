@@ -16,10 +16,10 @@ import java.util.regex.*;
 import plagiarismAlgorithm.*;
 
 // Sort method for a Collection of Files
-class SortByFileName implements Comparator<File> {
+class SortByFilePath implements Comparator<File> {
     @Override
     public int compare(File o1, File o2) {
-        return o1.getName().compareTo(o2.getName());
+        return o1.getAbsolutePath().compareTo(o2.getAbsolutePath());
     }
 }
 
@@ -91,6 +91,8 @@ public class UI implements ActionListener {
     private HashMap<String, JCheckBox> checkboxes;
     private HashMap<String, JProgressBar> progressBars;
     private JButton[] fileButtons;
+    private JLabel[] fileLabels;
+    private JPanel[] fileSelectionPanels;
 
     private JFrame frame;
 
@@ -118,7 +120,7 @@ public class UI implements ActionListener {
         // Initialize JPanels
         // *******************************************************************************
         panels.put("mainPage", new JPanel(new GridBagLayout()));
-        panels.put("fileSelectionInner", new JPanel(new GridLayout(0, 2)));
+        panels.put("fileSelectionInner", new JPanel(new GridLayout(0, 1)));
         panels.put("fileSelection", new JPanel(new GridBagLayout()));
         panels.put("fileSimilarity", new JPanel(new GridBagLayout()));
         panels.put("overThreshold", new JPanel(new FlowLayout()));
@@ -374,8 +376,8 @@ public class UI implements ActionListener {
         c.gridx = 0;
         c.gridy = 1;
         c.gridwidth = 4;
-        for (int i = 0; i < fileButtons.length; i++) {
-            panels.get("fileSelectionInner").add(fileButtons[i]);
+        for (int i = 0; i < fileSelectionPanels.length; i++) {
+            panels.get("fileSelectionInner").add(fileSelectionPanels[i]);
         }
         panels.get("fileSelection").add(scrollPanes.get("fileSelection"), c);
 
@@ -590,12 +592,16 @@ public class UI implements ActionListener {
     void createFileButtons() {
         if (needToCalculate) {
             fileButtons = new JButton[selectedFiles.size()];
+            fileLabels = new JLabel[selectedFiles.size()];
+            fileSelectionPanels = new JPanel[selectedFiles.size()];
             for (int i = 0; i < selectedFiles.size(); i++) {
-                if (!ignoredFiles.contains(i)) {
-                    fileButtons[i] = new JButton(selectedFiles.get(i).getName());
-                    fileButtons[i].addActionListener(this);
-                    fileButtons[i].setPreferredSize(new Dimension(300, 20));
-                }
+                fileButtons[i] = new JButton(selectedFiles.get(i).getName());
+                fileButtons[i].addActionListener(this);
+                fileButtons[i].setPreferredSize(new Dimension(300, 20));
+                fileLabels[i] = new JLabel(selectedFiles.get(i).getAbsolutePath());
+                fileSelectionPanels[i] = new JPanel(new GridLayout(0, 1));
+                fileSelectionPanels[i].add(fileLabels[i]);
+                fileSelectionPanels[i].add(fileButtons[i]);
             }
         }
     }
@@ -853,7 +859,7 @@ public class UI implements ActionListener {
                     selectedFiles.add(file);
                 }
 
-                Collections.sort(selectedFiles, new SortByFileName());
+                Collections.sort(selectedFiles, new SortByFilePath());
 
                 int i = 0;
                 textAreas.get("selectedFiles").setText(" Selected " + selectedFiles.size() + " Files:\n");
@@ -892,7 +898,7 @@ public class UI implements ActionListener {
                 File directory = new File(fileChooser.getSelectedFile().getAbsolutePath());
                 addToSelectedPDF(directory);
 
-                Collections.sort(selectedFiles, new SortByFileName());
+                Collections.sort(selectedFiles, new SortByFilePath());
 
                 int i = 0;
                 textAreas.get("selectedFiles").setText(" Selected " + selectedFiles.size() + " Files:\n");
